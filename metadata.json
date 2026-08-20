@@ -1,0 +1,6 @@
+{
+  "name": "YAWAR INKA",
+  "description": "Sistema de control de inventario, vestimentas, danzas y alquileres con horarios y notificaciones de alerta para YAWAR INKA.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
