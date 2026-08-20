@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YAWAR INKA · Control de vestimentas, danzas y alquileres</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-text">
+      <span class="brand-name">YAWAR INKA</span>
+      <span class="brand-sub" id="brand-subtitle">Control de vestimentas, danzas y alquileres</span>
+    </div>
+  </div>
+  <nav class="tabs" id="nav-tabs" role="tablist" aria-label="Secciones principales">
+    <button class="tab active" data-view="inventario" role="tab" aria-selected="true" id="tab-inventario">Productos</button>
+    <button class="tab" data-view="danzas" role="tab" aria-selected="false" id="tab-danzas">Danzas</button>
+    <button class="tab" data-view="alquileres" role="tab" aria-selected="false" id="tab-alquileres">Alquileres</button>
+  </nav>
+  <div class="topbar-actions">
+    <button type="button" id="btn-open-notifications" class="btn-notifications-bell" title="Alertas de entregas y devoluciones">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span id="notifications-badge" class="notif-badge hidden">0</span>
+    </button>
+    <button type="button" id="btn-share-catalog-topbar" class="btn-share-topbar" title="Compartir catálogo público de danzas con clientes">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      <span class="btn-label">Compartir catálogo</span>
+    </button>
+    <div id="cloud-sync-status" class="cloud-sync-pill" title="Sincronización en tiempo real con Firebase Firestore">
+      <span class="sync-dot"></span>
+      <span class="sync-text btn-label">Conectando nube...</span>
+    </div>
+    <div id="auth-status-container" class="auth-pill">
+      <!-- Inyectado dinámicamente: Administrador / Modo Catálogo -->
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ===================== VISTA 1: PRODUCTOS (ALMACÉN PRINCIPAL) ===================== -->
+  <section id="view-inventario" class="view active" role="tabpanel">
+    <div class="view-head">
+      <div>
+        <h1>Prendas y Productos</h1>
+        <p class="view-sub">Registro de existencias físicas en almacén con sus respectivas tallas y cantidades.</p>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="search-productos" type="text" placeholder="Buscar prenda (ej. camisa, sombrero, pantalón)...">
+      </div>
+      <select id="filter-product-dance" class="toolbar-select" title="Filtrar por danza">
+        <option value="">Todas las danzas</option>
+      </select>
+      <button id="btn-add-product" class="btn-primary">+ Agregar prenda</button>
+    </div>
+
+    <div class="summary-strip" id="summary-inventario"></div>
+
+    <div id="products-grid" class="grid"></div>
+    <p id="products-empty" class="empty-state hidden">
+      No hay prendas registradas. Haz clic en <strong>«+ Agregar prenda»</strong> para registrar una prenda.
+    </p>
+  </section>
+
+  <!-- ===================== VISTA 2: DANZAS ===================== -->
+  <section id="view-danzas" class="view" role="tabpanel">
+    <div class="view-head" id="danzas-view-head">
+      <div>
+        <h1 id="danzas-title">Vestuario por danza</h1>
+        <p class="view-sub" id="danzas-subtitle">Consulta y organización de las prendas que componen el traje de cada danza.</p>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="search-danzas" type="text" placeholder="Buscar danza (ej. Danza Guerrera, San Sebastián)...">
+      </div>
+      <button id="btn-add-dance" class="btn-primary">+ Agregar danza</button>
+    </div>
+
+    <div id="dances-grid" class="grid"></div>
+    <p id="dances-empty" class="empty-state hidden">
+      No hay danzas registradas.
+    </p>
+  </section>
+
+  <!-- ===================== VISTA 3: ALQUILERES & DISPONIBILIDAD ===================== -->
+  <section id="view-alquileres" class="view" role="tabpanel">
+    <div class="view-head">
+      <div>
+        <h1>Alquileres y Salidas</h1>
+        <p class="view-sub">Registro de salidas con fecha y hora de entrega, y control de devoluciones y disponibilidad.</p>
+      </div>
+    </div>
+
+    <!-- Banner de Alertas Rápidas de Entregas y Devoluciones -->
+    <div id="rental-alerts-banner" class="rental-alerts-banner hidden">
+      <div class="rental-alerts-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </div>
+      <div class="rental-alerts-content" id="rental-alerts-text">
+        <!-- Generado dinámicamente con las entregas/devoluciones de hoy o atrasadas -->
+      </div>
+      <button type="button" id="btn-open-notifications-banner" class="btn-alerts-action">Ver todas las alertas</button>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="search-alquileres" type="text" placeholder="Buscar por cliente, danza o fecha...">
+      </div>
+      <div class="filter-group">
+        <button class="filter-btn active" data-rental-filter="all">Todos</button>
+        <button class="filter-btn" data-rental-filter="active">En préstamo</button>
+        <button class="filter-btn" data-rental-filter="returned">Devueltos</button>
+      </div>
+      <button id="btn-toggle-availability-panel" class="btn-secondary">Ver stock disponible</button>
+      <button id="btn-add-rental" class="btn-primary">+ Nuevo Alquiler</button>
+    </div>
+
+    <div class="summary-strip" id="summary-alquileres"></div>
+
+    <!-- Panel de Stock Disponible Restante (descontado) -->
+    <div id="availability-panel" class="availability-section hidden">
+      <div class="availability-head">
+        <div>
+          <h2>Stock Disponible (Restante tras alquileres)</h2>
+          <p class="view-sub">Muestra la cantidad restante que queda libre para alquilar en este momento.</p>
+        </div>
+        <button id="btn-close-availability" class="btn-ghost" style="padding:6px 12px; font-size:12.5px;">Ocultar panel</button>
+      </div>
+      <div id="availability-grid" class="availability-grid"></div>
+    </div>
+
+    <!-- Lista de Alquileres Registrados -->
+    <div id="rentals-grid" class="rentals-grid"></div>
+    <p id="rentals-empty" class="empty-state hidden">
+      No hay alquileres registrados. Haz clic en <strong>«+ Nuevo Alquiler»</strong> para registrar una salida.
+    </p>
+  </section>
+
+</main>
+
+<footer class="footer-bar">
+  <div class="footer-left">
+    <span class="footer-note">YAWAR INKA · Control de vestimentas y Danzas Folclóricas</span>
+    <span id="footer-admin-link" class="footer-admin-link">Acceso Administrador</span>
+  </div>
+</footer>
+
+<!-- ===================== MODAL: PRODUCTO / PRENDA ===================== -->
+<div id="modal-product" class="modal-overlay hidden">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-product-title">
+    <div class="modal-head">
+      <h2 id="modal-product-title">Editar prenda</h2>
+      <button class="modal-close" data-close-modal="modal-product" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="product-id">
+
+      <label class="field">
+        <span class="field-label">Nombre de la prenda</span>
+        <input type="text" id="product-name" placeholder="Ej. Camisa a cuadros, Sombrero, Pantalón negro">
+      </label>
+
+      <label class="field">
+        <span class="field-label">Danza a la que pertenece (opcional)</span>
+        <input type="text" id="product-dance-tag" placeholder="Ej. San Sebastián, Danza Guerrera">
+      </label>
+
+      <div class="field">
+        <span class="field-label">Foto de la prenda</span>
+        <div class="photo-uploader">
+          <img id="product-photo-preview" class="photo-preview hidden" alt="Vista previa de la prenda">
+          <div id="product-photo-placeholder" class="photo-placeholder">Sin foto</div>
+          <div class="photo-uploader-actions">
+            <div class="btn-group-row">
+              <button type="button" id="product-btn-camera" class="btn-secondary btn-cam">
+                <svg class="cam-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                <span class="btn-label">Tomar foto</span>
+              </button>
+              <label class="btn-ghost btn-file" style="display:inline-flex; align-items:center; cursor:pointer;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span class="btn-label">Subir imagen</span>
+                <input type="file" id="product-photo-input" accept="image/*" hidden>
+              </label>
+              <button type="button" id="product-btn-crop" class="btn-ghost hidden" style="display:inline-flex; align-items:center;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>
+                <span class="btn-label">Ajustar encuadre</span>
+              </button>
+            </div>
+            <input type="file" id="product-photo-camera" accept="image/*" capture="environment" hidden>
+            <button type="button" id="product-photo-remove" class="btn-text hidden">Quitar foto</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formato de tallas: Con tallas / Sin tallas -->
+      <div class="field">
+        <span class="field-label">Formato de tallas</span>
+        <div class="segmented-control">
+          <label class="segmented-option">
+            <input type="radio" name="product-size-type" value="with_sizes" checked id="type-with-sizes">
+            <span>Con tallas</span>
+          </label>
+          <label class="segmented-option">
+            <input type="radio" name="product-size-type" value="no_sizes" id="type-no-sizes">
+            <span>Sin tallas</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- SECCIÓN CON TALLAS -->
+      <div id="section-with-sizes" class="field">
+        <span class="field-label">Tallas y cantidades</span>
+        <div id="product-sizes-list" class="sizes-editor"></div>
+        <div class="add-size-row">
+          <select id="new-size-select">
+            <option value="">Elegir talla...</option>
+          </select>
+          <input type="text" id="new-size-custom" placeholder="Otra talla" class="hidden">
+          <input type="number" id="new-size-qty" min="1" value="1" placeholder="Cant.">
+          <button type="button" id="btn-add-size" class="btn-secondary">+ Añadir talla</button>
+        </div>
+      </div>
+
+      <!-- SECCIÓN SIN TALLAS -->
+      <div id="section-no-sizes" class="field hidden">
+        <span class="field-label">Cantidad total en almacén</span>
+        <div class="direct-qty-input-box">
+          <label for="product-direct-qty">Cantidad:</label>
+          <input type="number" id="product-direct-qty" min="0" value="1">
+          <span>unidades</span>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-foot">
+      <button class="btn-danger-outline hidden" id="btn-delete-product">Eliminar prenda</button>
+      <div class="modal-foot-right">
+        <button class="btn-ghost" data-close-modal="modal-product">Cancelar</button>
+        <button class="btn-primary" id="btn-save-product">Guardar prenda</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: DANZA ===================== -->
+<div id="modal-dance" class="modal-overlay hidden">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-dance-title">
+    <div class="modal-head">
+      <h2 id="modal-dance-title">Editar danza</h2>
+      <button class="modal-close" data-close-modal="modal-dance" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="dance-id">
+
+      <label class="field">
+        <span class="field-label">Nombre de la danza</span>
+        <input type="text" id="dance-name" placeholder="Ej. Danza Guerrera YAWAR INKA">
+      </label>
+
+      <div class="field">
+        <span class="field-label">Foto de la danza</span>
+        <div class="photo-uploader">
+          <img id="dance-photo-preview" class="photo-preview hidden" alt="Vista previa de la danza">
+          <div id="dance-photo-placeholder" class="photo-placeholder">Sin foto</div>
+          <div class="photo-uploader-actions">
+            <div class="btn-group-row">
+              <button type="button" id="dance-btn-camera" class="btn-secondary btn-cam">
+                <svg class="cam-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                <span class="btn-label">Tomar foto</span>
+              </button>
+              <label class="btn-ghost btn-file" style="display:inline-flex; align-items:center; cursor:pointer;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span class="btn-label">Subir imagen</span>
+                <input type="file" id="dance-photo-input" accept="image/*" hidden>
+              </label>
+              <button type="button" id="dance-btn-crop" class="btn-ghost hidden" style="display:inline-flex; align-items:center;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>
+                <span class="btn-label">Ajustar encuadre</span>
+              </button>
+            </div>
+            <input type="file" id="dance-photo-camera" accept="image/*" capture="environment" hidden>
+            <button type="button" id="dance-photo-remove" class="btn-text hidden">Quitar foto</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="field-label">Prendas que lleva este traje</span>
+        <div id="dance-requirements-list" class="requirements-editor"></div>
+        <div class="add-req-row">
+          <select id="new-req-product">
+            <option value="">Elegir prenda a incluir...</option>
+          </select>
+          <button type="button" id="btn-add-req" class="btn-secondary">+ Incluir prenda</button>
+        </div>
+        <p id="req-no-products" class="field-hint warn hidden">Primero registra prendas en la pestaña «Productos» para poder agregarlas a la danza.</p>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-danger-outline hidden" id="btn-delete-dance">Eliminar danza</button>
+      <div class="modal-foot-right">
+        <button class="btn-ghost" data-close-modal="modal-dance">Cancelar</button>
+        <button class="btn-primary" id="btn-save-dance">Guardar danza</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: NUEVO / EDITAR ALQUILER ===================== -->
+<div id="modal-rental" class="modal-overlay hidden">
+  <div class="modal modal-lg" role="dialog" aria-modal="true" aria-labelledby="modal-rental-title">
+    <div class="modal-head">
+      <h2 id="modal-rental-title">Registrar Alquiler</h2>
+      <button class="modal-close" data-close-modal="modal-rental" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="rental-id">
+
+      <div class="form-grid-2">
+        <label class="field">
+          <span class="field-label">Cliente o Colegio / Institución</span>
+          <input type="text" id="rental-client" placeholder="Ej. Colegio San Martín, Prof. Carlos">
+        </label>
+        <label class="field">
+          <span class="field-label">Teléfono o contacto (opcional)</span>
+          <input type="text" id="rental-contact" placeholder="Ej. 987 654 321">
+        </label>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="field">
+          <span class="field-label">Fecha y Hora de Entrega / Salida</span>
+          <div class="datetime-inputs-row">
+            <input type="date" id="rental-date-out" title="Fecha de entrega">
+            <input type="time" id="rental-time-out" value="09:00" title="Hora de entrega">
+          </div>
+        </div>
+        <div class="field">
+          <span class="field-label">Fecha y Hora de Devolución estimada</span>
+          <div class="datetime-inputs-row">
+            <input type="date" id="rental-date-return" title="Fecha de devolución">
+            <input type="time" id="rental-time-return" value="18:00" title="Hora de devolución">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-grid-2">
+        <label class="field">
+          <span class="field-label">Danza o Traje registrado</span>
+          <select id="rental-dance-select">
+            <option value="">-- Seleccionar danza registrada --</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">Aviso previo de notificación</span>
+          <select id="rental-alert-advance">
+            <option value="none">Sin aviso previo</option>
+            <option value="1h">1 hora antes de la entrega/devolución</option>
+            <option value="2h" selected>2 horas antes</option>
+            <option value="4h">4 horas antes</option>
+            <option value="1d">1 día antes</option>
+            <option value="2d">2 días antes</option>
+          </select>
+        </label>
+      </div>
+
+      <label class="field">
+        <span class="field-label">Nombre personalizado de la danza (opcional si no está en la lista)</span>
+        <input type="text" id="rental-dance-custom" placeholder="Ej. Santiago, Marinera Norteña, Caporales">
+      </label>
+
+      <!-- PRENDAS / TRAJES LLEVADOS POR TALLA -->
+      <div class="field" style="margin-top:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
+          <div>
+            <span class="field-label" style="font-size:15.5px; font-weight:800; margin:0;">
+              Trajes Llevados por Talla
+            </span>
+            <p class="field-hint" style="margin:2px 0 0 0;">
+              Indica la cantidad de cada talla. Para cada persona, todas las prendas de su traje corresponden a su misma talla.
+            </p>
+          </div>
+          <button type="button" id="btn-toggle-paste-box" class="btn-ghost" style="padding:4px 10px; font-size:12.5px;">
+            📋 Pegar lista de Word / WhatsApp
+          </button>
+        </div>
+
+        <!-- Cuadro para pegar lista de texto (oculto por defecto) -->
+        <div id="rental-paste-box" class="hidden" style="margin-bottom:12px; padding:12px; background:#FFFFFF; border-radius:10px; border:1.5px solid #BFDBFE;">
+          <label class="field-label" style="font-size:13px; font-weight:700;">Pegar lista de alumnos o texto con tallas:</label>
+          <textarea id="rental-paste-text" rows="4" style="width:100%; font-family:var(--font-mono); font-size:12.5px; padding:8px; border:1px solid var(--line); border-radius:6px;" placeholder="Ejemplo:&#10;1. Apolinario Quispe Jheremy - Varón - S&#10;2. Barboza Puse Lucy - Mujer - 14&#10;3. Balbin Maquin Artur - Varón - 16"></textarea>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; flex-wrap:wrap; gap:6px;">
+            <span style="font-size:12px; color:var(--ink-faint);">Detecta automáticamente Varones (V), Mujeres (M) y tallas (6, 8, 14, S, M, etc.)</span>
+            <div style="display:flex; gap:6px;">
+              <button type="button" id="btn-cancel-paste-box" class="btn-ghost" style="padding:4px 10px; font-size:12px;">Cerrar</button>
+              <button type="button" id="btn-apply-paste-box" class="btn-primary" style="padding:4px 12px; font-size:12px;">Importar y sumar tallas</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- BLOQUE: VARONES -->
+        <div class="rental-gender-box male-box" style="background:#F0F7FF; border:1.5px solid #BFDBFE; border-radius:12px; padding:14px; margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="gender-dot gender-dot-male" style="width:11px; height:11px;"></span>
+              <strong style="color:#1E40AF; font-size:15px;">VARONES</strong>
+            </div>
+            <span id="rental-male-total-badge" class="gender-badge gender-badge-male" style="font-size:13px; padding:4px 10px;">
+              0 trajes
+            </span>
+          </div>
+
+          <div id="rental-male-sizes-grid" class="rental-sizes-grid"></div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+            <button type="button" id="btn-add-male-custom-size" class="btn-ghost" style="font-size:12px; padding:2px 8px; color:#1D4ED8;">
+              + Añadir otra talla a Varones
+            </button>
+          </div>
+        </div>
+
+        <!-- BLOQUE: MUJERES -->
+        <div class="rental-gender-box female-box" style="background:#FFF5F9; border:1.5px solid #FBCFE8; border-radius:12px; padding:14px; margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="gender-dot gender-dot-female" style="width:11px; height:11px;"></span>
+              <strong style="color:#9D174D; font-size:15px;">MUJERES</strong>
+            </div>
+            <span id="rental-female-total-badge" class="gender-badge gender-badge-female" style="font-size:13px; padding:4px 10px;">
+              0 trajes
+            </span>
+          </div>
+
+          <div id="rental-female-sizes-grid" class="rental-sizes-grid"></div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+            <button type="button" id="btn-add-female-custom-size" class="btn-ghost" style="font-size:12px; padding:2px 8px; color:#DB2777;">
+              + Añadir otra talla a Mujeres
+            </button>
+          </div>
+        </div>
+
+        <!-- TOTAL GENERAL LLEVADO -->
+        <div class="rental-total-banner" style="background:#FFFFFF; border:2px solid var(--ink); border-radius:10px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <span style="font-weight:700; font-size:14px;">TOTAL GENERAL LLEVADO:</span>
+          <span id="rental-grand-total-badge" style="font-family:var(--font-mono); font-size:16px; font-weight:800; color:var(--accent);">0 trajes</span>
+        </div>
+
+        <!-- DETALLE OPCIONAL: LISTA DE NOMBRES DE ALUMNOS -->
+        <details id="details-students-list" style="background:#FFFFFF; border:1px solid var(--line); border-radius:8px; padding:8px 12px;">
+          <summary style="font-size:13px; font-weight:700; cursor:pointer; color:var(--ink-soft); user-select:none;">
+            📝 Lista de nombres de alumnos / integrantes (<span id="students-count-indicator">0 personas</span>)
+          </summary>
+          <div style="margin-top:10px;">
+            <div class="student-add-bar" style="margin-bottom:10px;">
+              <input type="text" id="new-student-name" placeholder="Apellidos y Nombres" style="flex:2; min-width:160px;">
+              <div class="gender-selector">
+                <label class="gender-option gender-male" title="Varón">
+                  <input type="radio" name="new-student-gender" value="male" checked>
+                  <span>Varón</span>
+                </label>
+                <label class="gender-option gender-female" title="Mujer">
+                  <input type="radio" name="new-student-gender" value="female">
+                  <span>Mujer</span>
+                </label>
+              </div>
+              <select id="new-student-size" style="width:105px;">
+                <option value="4">Talla 4</option>
+                <option value="6">Talla 6</option>
+                <option value="8">Talla 8</option>
+                <option value="10">Talla 10</option>
+                <option value="12">Talla 12</option>
+                <option value="14">Talla 14</option>
+                <option value="16">Talla 16</option>
+                <option value="S">Talla S</option>
+                <option value="M">Talla M</option>
+                <option value="L">Talla L</option>
+                <option value="XL">Talla XL</option>
+              </select>
+              <button type="button" id="btn-add-student" class="btn-secondary">+ Agregar</button>
+            </div>
+
+            <div class="students-table-wrap" style="max-height:180px; overflow-y:auto; border:1px solid var(--line); border-radius:6px;">
+              <table class="students-table" style="width:100%; border-collapse:collapse; font-size:12.5px;">
+                <thead>
+                  <tr style="background:var(--surface-alt); text-align:left; border-bottom:1px solid var(--line);">
+                    <th style="padding:6px 8px; width:30px;">#</th>
+                    <th style="padding:6px 8px;">Nombre</th>
+                    <th style="padding:6px 8px; width:90px;">Género</th>
+                    <th style="padding:6px 8px; width:80px;">Talla</th>
+                    <th style="padding:6px 8px; width:35px; text-align:center;"></th>
+                  </tr>
+                </thead>
+                <tbody id="students-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <label class="field" style="margin-top:12px;">
+        <span class="field-label">Notas u observaciones (opcional)</span>
+        <input type="text" id="rental-notes" placeholder="Ej. Dejan DNI de garantía, evento por la tarde">
+      </label>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-danger-outline hidden" id="btn-delete-rental">Eliminar alquiler</button>
+      <div class="modal-foot-right">
+        <button class="btn-ghost" data-close-modal="modal-rental">Cancelar</button>
+        <button class="btn-primary" id="btn-save-rental">Guardar alquiler</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: VER LISTA DE ALUMNOS ===================== -->
+<div id="modal-view-students" class="modal-overlay hidden">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-view-students-title">
+    <div class="modal-head">
+      <div>
+        <h2 id="modal-view-students-title">Lista de Integrantes</h2>
+        <span id="modal-view-students-subtitle" style="font-size:13px; color:var(--ink-soft);"></span>
+      </div>
+      <button class="modal-close" data-close-modal="modal-view-students" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="modal-view-students-summary" class="students-summary-panel" style="margin-bottom:12px;"></div>
+      <div class="students-table-wrap" style="max-height:360px; overflow-y:auto; border:1px solid var(--line); border-radius:8px; background:#fff;">
+        <table class="students-table" style="width:100%; border-collapse:collapse; font-size:13.5px;">
+          <thead>
+            <tr style="background:var(--surface-alt); text-align:left; border-bottom:1px solid var(--line);">
+              <th style="padding:8px 10px; width:40px;">#</th>
+              <th style="padding:8px 10px;">Apellidos y Nombres</th>
+              <th style="padding:8px 10px; width:110px;">Género</th>
+              <th style="padding:8px 10px; width:90px;">Talla</th>
+            </tr>
+          </thead>
+          <tbody id="modal-view-students-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-primary" data-close-modal="modal-view-students">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: CÁMARA EN VIVO ===================== -->
+<div id="modal-camera-capture" class="modal-overlay hidden">
+  <div class="modal modal-camera-view" role="dialog" aria-modal="true" aria-labelledby="modal-camera-title">
+    <div class="modal-head">
+      <h2 id="modal-camera-title">Tomar foto</h2>
+      <button class="modal-close" id="btn-close-camera" aria-label="Cerrar cámara">✕</button>
+    </div>
+    <div class="modal-body" style="padding: 16px; align-items: center;">
+      <div class="video-container">
+        <video id="camera-stream" autoplay playsinline muted></video>
+        <canvas id="camera-canvas" class="hidden"></canvas>
+      </div>
+    </div>
+    <div class="modal-foot" style="justify-content: center;">
+      <button type="button" id="btn-snap-photo" class="btn-primary btn-snap">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+        Capturar foto
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: AJUSTAR / ENCUADRAR FOTO ===================== -->
+<div id="modal-crop-photo" class="modal-overlay hidden">
+  <div class="modal" style="max-width: 520px;" role="dialog" aria-modal="true" aria-labelledby="modal-crop-title">
+    <div class="modal-head">
+      <div>
+        <h2 id="modal-crop-title">Ajustar encuadre de la foto</h2>
+        <span style="font-size:12.5px; color:var(--ink-soft);">Arrastra la imagen o usa el zoom para centrar lo que deseas que se vea</span>
+      </div>
+      <button class="modal-close" data-close-modal="modal-crop-photo" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-body" style="padding: 16px; align-items: center;">
+      
+      <!-- Contenedor con la proporción exacta del marco de la tarjeta (16:10 / 180px) -->
+      <div class="crop-viewport-wrap">
+        <div id="crop-viewport" class="crop-viewport">
+          <img id="crop-target-img" src="" alt="Ajustar imagen" draggable="false">
+        </div>
+        <div class="crop-guide-overlay">
+          <div class="crop-grid-line h-1"></div>
+          <div class="crop-grid-line h-2"></div>
+          <div class="crop-grid-line v-1"></div>
+          <div class="crop-grid-line v-2"></div>
+        </div>
+      </div>
+
+      <div class="crop-controls-panel">
+        <div class="crop-control-row">
+          <span class="crop-ctrl-label">Zoom:</span>
+          <button type="button" id="btn-crop-zoom-out" class="icon-btn" title="Alejar" style="display:flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:6px; border:1px solid var(--line); background:#fff; cursor:pointer;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          </button>
+          <input type="range" id="crop-zoom-range" min="1" max="3" step="0.02" value="1" style="flex:1;">
+          <button type="button" id="btn-crop-zoom-in" class="icon-btn" title="Acercar" style="display:flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:6px; border:1px solid var(--line); background:#fff; cursor:pointer;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          </button>
+        </div>
+        <div class="crop-actions-row">
+          <button type="button" id="btn-crop-fit-contain" class="btn-ghost" style="font-size:12px; padding:4px 10px;">
+            Encuadrar completa
+          </button>
+          <button type="button" id="btn-crop-reset" class="btn-ghost" style="font-size:12px; padding:4px 10px;">
+            Centrar imagen
+          </button>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" data-close-modal="modal-crop-photo">Cancelar</button>
+      <button class="btn-primary" id="btn-crop-confirm">Aplicar recorte</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: COMPARTIR CATÁLOGO ===================== -->
+<div id="modal-share-catalog" class="modal-overlay hidden">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-share-title">
+    <div class="modal-head">
+      <h2 id="modal-share-title">Compartir Catálogo de Danzas</h2>
+      <button class="modal-close" data-close-modal="modal-share-catalog" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13.5px; color:var(--ink-soft); margin-top:0;">
+        Comparte este enlace con tus clientes para que puedan explorar las danzas y vestuarios disponibles. 
+        <strong style="color:var(--ink);">Los clientes solo podrán ver las fotos y prendas (sin permisos de edición).</strong>
+      </p>
+
+      <label class="field">
+        <span class="field-label">Enlace público del catálogo</span>
+        <div class="copy-url-group">
+          <input type="text" id="share-catalog-url" readonly style="background:#F8FAFC; font-family:var(--font-mono); font-size:12.5px;">
+          <button type="button" id="btn-copy-catalog-url" class="btn-primary" style="white-space:nowrap;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>Copiar enlace</span>
+          </button>
+        </div>
+      </label>
+
+      <div class="share-actions-grid">
+        <a id="btn-share-whatsapp-link" href="#" target="_blank" rel="noopener noreferrer" class="share-channel-btn whatsapp-channel">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.699c.963.54 1.777.838 2.796.838 3.185 0 5.77-2.587 5.77-5.769.001-3.182-2.583-5.771-5.77-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.275.072.376-.044c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.073.043.419-.101.824z"/></svg>
+          <span>Enviar por WhatsApp</span>
+        </a>
+        <button type="button" id="btn-open-catalog-preview" class="share-channel-btn preview-channel">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span>Ver como cliente</span>
+        </button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-primary" data-close-modal="modal-share-catalog">Listo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: ACCESO ADMINISTRADOR ===================== -->
+<div id="modal-admin-login" class="modal-overlay hidden">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-admin-title">
+    <div class="modal-head">
+      <h2 id="modal-admin-title">Acceso de Administrador</h2>
+      <button class="modal-close" data-close-modal="modal-admin-login" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="admin-logged-in-view" class="hidden">
+        <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:10px; padding:14px; margin-bottom:14px;">
+          <div style="font-weight:700; color:#166534; font-size:14px; margin-bottom:4px;">✓ Sesión activa como Administrador</div>
+          <div id="current-admin-email-display" style="font-size:13px; color:#15803D; font-family:var(--font-mono);"></div>
+        </div>
+        <p style="font-size:13px; color:var(--ink-soft);">
+          Tienes acceso completo para editar prendas, trajes de danzas, gestionar salidas/alquileres y respaldos.
+        </p>
+        <div style="display:flex; gap:8px; margin-top:12px;">
+          <button type="button" id="btn-view-as-catalog" class="btn-secondary" style="flex:1;">Ver modo catálogo</button>
+          <button type="button" id="btn-logout-admin" class="btn-danger-outline" style="flex:1;">Cerrar sesión admin</button>
+        </div>
+      </div>
+
+      <div id="admin-login-form-view">
+        <p style="font-size:13.5px; color:var(--ink-soft); margin-top:0;">
+          Solo el correo autorizado del administrador tiene permisos para crear, editar o eliminar prendas, danzas y alquileres.
+        </p>
+        <label class="field">
+          <span class="field-label">Correo electrónico de Administrador</span>
+          <input type="email" id="admin-email-input" placeholder="ejemplo@gmail.com" value="jhonbastidas2805@gmail.com">
+        </label>
+        <p id="admin-login-error" class="hidden" style="color:var(--danger); font-size:12.5px; font-weight:600; margin-top:4px;">
+          Correo no autorizado como administrador.
+        </p>
+        <div style="background:#F8FAFC; border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-top:8px; font-size:12px; color:var(--ink-soft);">
+          💡 <strong>Nota:</strong> Los clientes y visitantes pueden ver el catálogo de danzas en modo de solo lectura sin necesidad de iniciar sesión.
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot" id="admin-login-modal-foot">
+      <button class="btn-ghost" data-close-modal="modal-admin-login">Cancelar</button>
+      <button class="btn-primary" id="btn-submit-admin-login">Ingresar como Administrador</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: DETALLE DE DANZA PARA CLIENTES ===================== -->
+<div id="modal-dance-view" class="modal-overlay hidden">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-dance-view-title">
+    <div class="modal-head">
+      <div>
+        <h2 id="modal-dance-view-title">Detalle de Danza</h2>
+        <span class="badge badge-accent" style="margin-top:2px;">Traje Típico Completo</span>
+      </div>
+      <button class="modal-close" data-close-modal="modal-dance-view" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="dance-view-photo-wrap" class="dance-detail-photo-wrap">
+        <img id="dance-view-photo" src="" alt="" class="hidden">
+        <div id="dance-view-placeholder" class="photo-placeholder">Sin foto de presentación</div>
+      </div>
+      <div class="dance-detail-info">
+        <h3 id="dance-view-name" style="font-size:18px; margin-bottom:8px;"></h3>
+        <span style="font-size:13px; font-weight:700; color:var(--ink); display:block; margin-bottom:6px;">Prendas que incluye la vestimenta:</span>
+        <ul id="dance-view-garments" class="dance-detail-garments-list"></ul>
+      </div>
+    </div>
+    <div class="modal-foot" style="justify-content:space-between;">
+      <a id="btn-dance-consult-whatsapp" href="#" target="_blank" rel="noopener noreferrer" class="btn-whatsapp-hero" style="font-size:13.5px; padding:8px 14px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.699c.963.54 1.777.838 2.796.838 3.185 0 5.77-2.587 5.77-5.769.001-3.182-2.583-5.771-5.77-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.275.072.376-.044c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.073.043.419-.101.824z"/></svg>
+        <span>Consultar esta danza</span>
+      </a>
+      <button class="btn-secondary" data-close-modal="modal-dance-view">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: ALERTAS Y NOTIFICACIONES ===================== -->
+<div id="modal-notifications" class="modal-overlay hidden">
+  <div class="modal modal-lg" role="dialog" aria-modal="true" aria-labelledby="modal-notif-title">
+    <div class="modal-head">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div class="notif-modal-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </div>
+        <div>
+          <h2 id="modal-notif-title" style="margin:0;">Notificaciones y Alertas de Horarios</h2>
+          <span style="font-size:12.5px; color:var(--ink-soft);">Avisos de entregas de vestuarios y fechas de devolución</span>
+        </div>
+      </div>
+      <button class="modal-close" data-close-modal="modal-notifications" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Barra de permisos de navegador -->
+      <div id="notif-permission-banner" class="notif-permission-bar">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span style="font-size:13px; font-weight:600; color:#1E40AF;">Recibe alertas en tu dispositivo cuando sea hora de entregar o recoger un vestuario.</span>
+        </div>
+        <button type="button" id="btn-request-notif-permission" class="btn-primary" style="padding:6px 12px; font-size:12.5px; white-space:nowrap;">
+          Activar notificaciones del sistema
+        </button>
+      </div>
+
+      <!-- Filtros rápidos de notificaciones -->
+      <div class="notif-filters-bar">
+        <button class="notif-filter-tab active" data-notif-filter="all">Todas (<span id="notif-count-all">0</span>)</button>
+        <button class="notif-filter-tab" data-notif-filter="overdue">⚠️ Atrasadas (<span id="notif-count-overdue">0</span>)</button>
+        <button class="notif-filter-tab" data-notif-filter="today">🔔 Para Hoy (<span id="notif-count-today">0</span>)</button>
+        <button class="notif-filter-tab" data-notif-filter="upcoming">📅 Próximas (<span id="notif-count-upcoming">0</span>)</button>
+      </div>
+
+      <!-- Lista de notificaciones -->
+      <div id="notifications-list" class="notifications-list-container">
+        <!-- Renderizado dinámico -->
+      </div>
+      <p id="notifications-empty" class="empty-state hidden" style="padding:32px 16px;">
+        No hay alertas ni entregas pendientes en esta categoría.
+      </p>
+
+    </div>
+    <div class="modal-foot">
+      <div style="font-size:12px; color:var(--ink-faint);" id="notif-last-checked-label">Actualizado automáticamente</div>
+      <button class="btn-primary" data-close-modal="modal-notifications">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
