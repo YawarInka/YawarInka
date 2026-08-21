@@ -222,15 +222,29 @@
 
       <!-- SECCIÓN CON TALLAS -->
       <div id="section-with-sizes" class="field">
-        <span class="field-label">Tallas y cantidades</span>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="field-label">Tallas y cantidades en almacén</span>
+          <span id="product-sizes-total-badge" class="gender-badge gender-badge-male" style="font-size:12px; font-weight:700;">0 und.</span>
+        </div>
+        <p class="field-hint" style="margin-bottom:6px;">Haz clic en una talla para agregarla automáticamente o ingresa cantidad y talla abajo:</p>
+        
+        <!-- Botones de selección rápida de tallas -->
+        <div class="quick-size-presets-bar" id="quick-size-presets"></div>
+
+        <!-- Lista de tallas añadidas -->
         <div id="product-sizes-list" class="sizes-editor"></div>
-        <div class="add-size-row">
-          <select id="new-size-select">
-            <option value="">Elegir talla...</option>
+
+        <!-- Fila de agregar / autocompletar talla -->
+        <div class="add-size-row" style="margin-top:8px;">
+          <select id="new-size-select" title="Elegir talla">
+            <option value="">Elegir otra talla...</option>
           </select>
-          <input type="text" id="new-size-custom" placeholder="Otra talla" class="hidden">
-          <input type="number" id="new-size-qty" min="1" value="1" placeholder="Cant.">
-          <button type="button" id="btn-add-size" class="btn-secondary">+ Añadir talla</button>
+          <input type="text" id="new-size-custom" placeholder="Talla pers." class="hidden">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <label for="new-size-qty" style="font-size:12px; color:var(--ink-soft); font-weight:600;">Cant:</label>
+            <input type="number" id="new-size-qty" min="1" value="1" placeholder="Cant." style="width:64px; text-align:center; font-family:var(--font-mono); font-weight:700;">
+          </div>
+          <button type="button" id="btn-add-size" class="btn-secondary" style="padding:6px 12px; font-size:12.5px;">+ Añadir</button>
         </div>
       </div>
 
@@ -298,15 +312,33 @@
       </div>
 
       <div class="field">
-        <span class="field-label">Prendas que lleva este traje</span>
-        <div id="dance-requirements-list" class="requirements-editor"></div>
-        <div class="add-req-row">
-          <select id="new-req-product">
-            <option value="">Elegir prenda a incluir...</option>
-          </select>
-          <button type="button" id="btn-add-req" class="btn-secondary">+ Incluir prenda</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <span class="field-label">Prendas que componen este traje</span>
+          <span id="dance-req-count-badge" class="gender-badge gender-badge-male" style="font-size:12px; font-weight:700;">0 prendas</span>
         </div>
-        <p id="req-no-products" class="field-hint warn hidden">Primero registra prendas en la pestaña «Productos» para poder agregarlas a la danza.</p>
+
+        <!-- Lista de prendas ya agregadas -->
+        <div id="dance-requirements-list" class="requirements-editor"></div>
+
+        <!-- Selector interactivo de prendas con buscador y carrusel deslizable -->
+        <div class="dance-garment-picker-box" style="margin-top:10px; background:#F8FAFC; border:1.5px solid var(--line); border-radius:10px; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:13px; font-weight:700; color:var(--ink);">Añadir prendas al traje:</span>
+            <span style="font-size:11.5px; color:var(--ink-faint);">Toca para agregar/quitar</span>
+          </div>
+
+          <!-- Buscador en tiempo real -->
+          <div class="dance-req-search-box">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="dance-req-search-input" placeholder="🔍 Buscar prenda por nombre (ej. Camisa, Poncho, Pollera...)" autocomplete="off">
+            <button type="button" id="btn-clear-dance-req-search" class="icon-btn remove-x hidden" title="Limpiar búsqueda">✕</button>
+          </div>
+
+          <!-- Slider / Lista deslizante de prendas disponibles -->
+          <div id="dance-available-garments-slider" class="dance-garments-slider"></div>
+
+          <p id="req-no-products" class="field-hint warn hidden" style="margin-top:6px;">Primero registra prendas en la pestaña «Productos» para poder agregarlas a la danza.</p>
+        </div>
       </div>
     </div>
     <div class="modal-foot">
@@ -529,7 +561,7 @@
     </div>
     <div class="modal-body" style="padding: 16px; align-items: center;">
       
-      <!-- Contenedor con la proporción exacta del marco de la tarjeta (16:10 / 180px) -->
+      <!-- Contenedor con la proporción vertical de trajes (3:4) -->
       <div class="crop-viewport-wrap">
         <div id="crop-viewport" class="crop-viewport">
           <img id="crop-target-img" src="" alt="Ajustar imagen" draggable="false">
@@ -616,52 +648,93 @@
 <div id="modal-admin-login" class="modal-overlay hidden">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-admin-title">
     <div class="modal-head">
-      <h2 id="modal-admin-title">Acceso de Administrador</h2>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <h2 id="modal-admin-title">Acceso de Administrador</h2>
+      </div>
       <button class="modal-close" data-close-modal="modal-admin-login" aria-label="Cerrar">✕</button>
     </div>
     <div class="modal-body">
+      <!-- VISTA: SESIÓN ACTIVA -->
       <div id="admin-logged-in-view" class="hidden">
         <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:10px; padding:14px; margin-bottom:14px;">
-          <div style="font-weight:700; color:#166534; font-size:14px; margin-bottom:4px;">✓ Sesión activa como Administrador</div>
-          <div id="current-admin-email-display" style="font-size:13px; color:#15803D; font-family:var(--font-mono);"></div>
+          <div style="display:flex; align-items:center; gap:8px; font-weight:700; color:#166534; font-size:14px; margin-bottom:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Sesión activa como Administrador</span>
+          </div>
+          <div id="current-admin-email-display" style="font-size:13px; color:#15803D; font-family:var(--font-mono); margin-top:2px;"></div>
         </div>
-        <p style="font-size:13px; color:var(--ink-soft);">
-          Tienes acceso completo para editar prendas, trajes de danzas, gestionar salidas/alquileres y respaldos.
+        <p style="font-size:13px; color:var(--ink-soft); margin-top:0;">
+          Tienes acceso completo para registrar prendas, armar trajes de danzas, gestionar salidas, devoluciones y copias de seguridad.
         </p>
-        <div style="display:flex; gap:8px; margin-top:12px;">
-          <button type="button" id="btn-view-as-catalog" class="btn-secondary" style="flex:1;">Ver modo catálogo</button>
-          <button type="button" id="btn-logout-admin" class="btn-danger-outline" style="flex:1;">Cerrar sesión admin</button>
+
+        <!-- Sección para cambiar contraseña -->
+        <div style="margin-top:14px; border-top:1px solid var(--line); padding-top:12px;">
+          <button type="button" id="btn-toggle-change-password" class="btn-ghost" style="font-size:12.5px; padding:4px 8px; color:var(--ink-soft); width:100%; text-align:left; display:flex; align-items:center; justify-content:space-between;">
+            <span>🔑 Cambiar mi contraseña de administrador</span>
+            <span id="change-pass-toggle-icon">▼</span>
+          </button>
+          <div id="change-password-box" class="hidden" style="margin-top:10px; background:#F8FAFC; border:1px solid var(--line); border-radius:8px; padding:12px;">
+            <label class="field">
+              <span class="field-label" style="font-size:12px;">Contraseña actual</span>
+              <input type="password" id="change-pass-current" placeholder="Ingresa contraseña actual" autocomplete="current-password">
+            </label>
+            <label class="field" style="margin-top:8px;">
+              <span class="field-label" style="font-size:12px;">Nueva contraseña</span>
+              <input type="password" id="change-pass-new" placeholder="Mínimo 3 caracteres" autocomplete="new-password">
+            </label>
+            <p id="change-pass-error" class="hidden" style="color:var(--danger); font-size:12px; margin:6px 0 0 0; font-weight:600;"></p>
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
+              <button type="button" id="btn-cancel-change-pass" class="btn-ghost" style="font-size:12px; padding:4px 10px;">Cancelar</button>
+              <button type="button" id="btn-save-new-pass" class="btn-primary" style="font-size:12px; padding:4px 12px;">Guardar clave</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:18px;">
+          <button type="button" id="btn-view-as-catalog" class="btn-secondary" style="flex:1;">
+            👁️ Vista Modo Catálogo
+          </button>
+          <button type="button" id="btn-logout-admin" class="btn-danger-outline" style="flex:1;">
+            🚪 Cerrar sesión
+          </button>
         </div>
       </div>
 
+      <!-- VISTA: FORMULARIO DE INICIO DE SESIÓN -->
       <div id="admin-login-form-view">
-        <p style="font-size:13.5px; color:var(--ink-soft); margin-top:0;">
-          Ingresa con tu usuario o correo de administrador para gestionar productos, danzas y alquileres.
+        <p style="font-size:13.5px; color:var(--ink-soft); margin-top:0; margin-bottom:14px;">
+          Ingresa tus credenciales de administrador para acceder a la gestión de inventario, danzas y alquileres.
         </p>
+
         <label class="field">
           <span class="field-label">Usuario o Correo</span>
-          <input type="text" id="admin-email-input" placeholder="admin o jhonbastidas2805@gmail.com" autocomplete="username">
+          <input type="text" id="admin-email-input" placeholder="Usuario o correo" autocomplete="username">
         </label>
-        <label class="field" style="margin-top:10px;">
-          <span class="field-label">Contraseña o PIN</span>
-          <input type="password" id="admin-pin-input" placeholder="123 o tu PIN (ej. 2805)" autocomplete="current-password">
+
+        <label class="field" style="margin-top:12px;">
+          <span class="field-label">Contraseña</span>
+          <input type="password" id="admin-pin-input" placeholder="Contraseña de administrador" autocomplete="current-password">
         </label>
-        <p id="admin-login-error" class="hidden" style="color:var(--danger); font-size:12.5px; font-weight:600; margin-top:6px;">
-          Credenciales incorrectas.
+
+        <!-- Opción de Guardar / Recordar Sesión -->
+        <label style="display:flex; align-items:center; gap:8px; margin-top:14px; cursor:pointer; font-size:13px; color:var(--ink); user-select:none;">
+          <input type="checkbox" id="admin-remember-me" checked style="width:16px; height:16px; accent-color:var(--accent);">
+          <span>Mantener mi sesión activa en este dispositivo</span>
+        </label>
+        <p style="font-size:11.5px; color:var(--ink-faint); margin:4px 0 0 24px;">
+          Desmarca esta opción si estás en un celular o computadora compartida.
         </p>
-        <div style="display:flex; justify-content:space-between; align-items:center; background:#F0FDF4; border:1px solid #BBF7D0; border-radius:8px; padding:10px 12px; margin-top:12px; font-size:12.5px; color:#166534; gap:8px; flex-wrap:wrap;">
-          <div>
-            🔑 <strong>Acceso rápido:</strong> Usuario: <strong>admin</strong> | Clave: <strong>123</strong>
-          </div>
-          <button type="button" id="btn-quick-admin-login" class="btn-primary" style="padding:4px 10px; font-size:12px; background:#16A34A; border-color:#16A34A;">
-            Entrar con 1 clic
-          </button>
-        </div>
+
+        <p id="admin-login-error" class="hidden" style="color:var(--danger); background:#FEF2F2; border:1px solid #FECACA; border-radius:6px; padding:8px 10px; font-size:12.5px; font-weight:600; margin-top:12px; display:flex; align-items:center; gap:6px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span id="admin-login-error-text">Usuario o contraseña incorrectos.</span>
+        </p>
       </div>
     </div>
     <div class="modal-foot" id="admin-login-modal-foot">
       <button class="btn-ghost" data-close-modal="modal-admin-login">Cancelar</button>
-      <button class="btn-primary" id="btn-submit-admin-login">Ingresar como Administrador</button>
+      <button class="btn-primary" id="btn-submit-admin-login">Iniciar Sesión</button>
     </div>
   </div>
 </div>
@@ -728,9 +801,9 @@
       <!-- Filtros rápidos de notificaciones -->
       <div class="notif-filters-bar">
         <button class="notif-filter-tab active" data-notif-filter="all">Todas (<span id="notif-count-all">0</span>)</button>
-        <button class="notif-filter-tab" data-notif-filter="overdue">⚠️ Atrasadas (<span id="notif-count-overdue">0</span>)</button>
-        <button class="notif-filter-tab" data-notif-filter="today">🔔 Para Hoy (<span id="notif-count-today">0</span>)</button>
-        <button class="notif-filter-tab" data-notif-filter="upcoming">📅 Próximas (<span id="notif-count-upcoming">0</span>)</button>
+        <button class="notif-filter-tab" data-notif-filter="overdue">Atrasadas (<span id="notif-count-overdue">0</span>)</button>
+        <button class="notif-filter-tab" data-notif-filter="today">Para Hoy (<span id="notif-count-today">0</span>)</button>
+        <button class="notif-filter-tab" data-notif-filter="upcoming">Próximas (<span id="notif-count-upcoming">0</span>)</button>
       </div>
 
       <!-- Lista de notificaciones -->
