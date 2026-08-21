@@ -2242,57 +2242,69 @@ input[type="number"] {
   background: #E2E8F0;
 }
 
-/* Botones dentro de tarjetas de danza en modo catálogo */
-.catalog-card-actions {
-  display: flex;
-  gap: 8px;
+/* Botones dentro de tarjetas de danza en modo catálogo y admin */
+.catalog-card-actions,
+.dance-card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
   width: 100%;
+  margin-top: 4px;
 }
 
-.btn-catalog-consult {
-  flex: 1;
+.dance-card-actions button,
+.catalog-card-actions button,
+.catalog-card-actions a {
+  width: 100%;
+  min-height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background: #EFF6FF;
-  color: #1D4ED8;
-  border: 1px solid #BFDBFE;
-  padding: 8px 12px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 700;
   text-decoration: none;
   cursor: pointer;
+  box-sizing: border-box;
   transition: all 0.15s ease;
+}
+
+.dance-card-actions button svg,
+.catalog-card-actions button svg,
+.catalog-card-actions a svg {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+}
+
+.btn-catalog-consult {
+  background: #25D366;
+  color: #FFFFFF;
+  border: 1px solid #1EBE5D;
+  padding: 8px 10px;
+  box-shadow: 0 1px 2px rgba(37, 211, 102, 0.2);
 }
 
 .btn-catalog-consult:hover {
-  background: #DBEAFE;
-  color: #1E40AF;
+  background: #20BA5A;
+  color: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(37, 211, 102, 0.35);
 }
 
 .btn-catalog-view-detail {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
   background: #FFFFFF;
-  color: #334155;
+  color: #1E293B;
   border: 1px solid #CBD5E1;
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s ease;
+  padding: 8px 10px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
 }
 
 .btn-catalog-view-detail:hover {
   background: #F8FAFC;
   color: #0F172A;
   border-color: #94A3B8;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.06);
 }
 
 /* Modal Detalle Danza */
@@ -2907,8 +2919,80 @@ input[type="number"] {
     font-size: 12px;
   }
 
+  /* Botones de acción en tarjetas móviles: Solo iconos limpios y ordenados */
+  .catalog-card-actions .btn-label,
+  .dance-card-actions .btn-label,
+  .card-actions .btn-label {
+    display: none;
+  }
+
+  .catalog-card-actions,
+  .dance-card-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    width: 100%;
+    margin-top: 2px;
+  }
+
+  .btn-catalog-view-detail,
+  .btn-catalog-consult,
+  .dance-card-actions button {
+    padding: 8px 4px;
+    min-height: 38px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .btn-catalog-view-detail svg,
+  .btn-catalog-consult svg,
+  .dance-card-actions button svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .card-actions {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+    margin-top: 2px;
+  }
+
+  .card-actions button {
+    padding: 8px 4px;
+    min-height: 38px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .card-actions button svg {
+    width: 18px;
+    height: 18px;
+  }
+
   .dance-garments-list {
     max-height: 60px;
+    gap: 3px;
+  }
+
+  .dance-garment-item {
+    padding: 3px 6px;
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .dance-garment-item span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .dance-garments-slider {
@@ -2960,6 +3044,40 @@ input[type="number"] {
     flex: 1;
     justify-content: center;
     text-align: center;
+  }
+
+  /* Modal Detalle Danza en móvil: Botón WhatsApp + Cerrar en dos columnas equilibradas */
+  #modal-dance-view .modal-foot {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 12px 16px;
+  }
+
+  #modal-dance-view .modal-foot #btn-dance-consult-whatsapp {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 10px;
+    min-height: 40px;
+    width: 100%;
+  }
+
+  #modal-dance-view .modal-foot #btn-dance-consult-whatsapp .btn-label {
+    display: none;
+  }
+
+  #modal-dance-view .modal-foot #btn-dance-consult-whatsapp svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  #modal-dance-view .modal-foot button {
+    width: 100%;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .photo-uploader {
