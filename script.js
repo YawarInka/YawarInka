@@ -530,14 +530,6 @@ function renderProducts() {
       `;
     }
 
-    const dancesList = dancesUsingProduct(product.id);
-    let usedInHtml = '';
-    if (product.danceTag) {
-      usedInHtml = `<div class="used-in"><span>Danza:</span> <span class="used-in-tag">${escapeHtml(product.danceTag)}</span></div>`;
-    } else if (dancesList.length > 0) {
-      usedInHtml = `<div class="used-in"><span>Danza:</span> ${dancesList.map((n) => `<span class="used-in-tag">${escapeHtml(n)}</span>`).join('')}</div>`;
-    }
-
     const photoHtml = product.photo
       ? `<img src="${product.photo}" alt="Foto de ${escapeHtml(product.name)}" loading="lazy">`
       : `<span class="placeholder-icon">${ICON_GARMENT}</span>`;
@@ -551,11 +543,13 @@ function renderProducts() {
       <div class="card-body">
         <div class="card-header">
           <h3 style="cursor:pointer;" data-edit-product="${product.id}">${escapeHtml(product.name)}</h3>
-          ${usedInHtml}
         </div>
         ${middleContentHtml}
         <div class="card-actions">
-          <button type="button" data-edit-product="${product.id}">Editar prenda</button>
+          <button type="button" class="btn-secondary" data-edit-product="${product.id}" title="Editar prenda" aria-label="Editar prenda" style="width:100%; display:flex; align-items:center; justify-content:center; gap:6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            <span class="btn-label">Editar prenda</span>
+          </button>
         </div>
       </div>
     `;
@@ -626,23 +620,27 @@ function renderDances() {
       // Modo catálogo para clientes: Solo ver detalle y consultar por WhatsApp
       cardActionsHtml = `
         <div class="catalog-card-actions">
-          <button type="button" class="btn-catalog-view-detail" data-view-dance="${dance.id}">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-            Ver vestuario
+          <button type="button" class="btn-catalog-view-detail" data-view-dance="${dance.id}" title="Ver vestuario y piezas del traje" aria-label="Ver vestuario">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span class="btn-label">Ver vestuario</span>
           </button>
-          <a href="${whatsappUrl}" target="_blank" rel="noopener noreferrer" class="btn-catalog-consult">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.699c.963.54 1.777.838 2.796.838 3.185 0 5.77-2.587 5.77-5.769.001-3.182-2.583-5.771-5.77-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.275.072.376-.044c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.073.043.419-.101.824z"/></svg>
-            Consultar
+          <a href="${whatsappUrl}" target="_blank" rel="noopener noreferrer" class="btn-catalog-consult" title="Consultar por WhatsApp" aria-label="Consultar por WhatsApp">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.699c.963.54 1.777.838 2.796.838 3.185 0 5.77-2.587 5.77-5.769.001-3.182-2.583-5.771-5.77-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.275.072.376-.044c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.073.043.419-.101.824z"/></svg>
+            <span class="btn-label">Consultar</span>
           </a>
         </div>
       `;
     } else {
       // Modo administrador: Permite editar o previsualizar
       cardActionsHtml = `
-        <div class="card-actions" style="display:flex; gap:8px;">
-          <button data-edit-dance="${dance.id}" style="flex:1;">Editar danza</button>
-          <button type="button" class="btn-ghost" data-view-dance="${dance.id}" style="padding:6px 12px; font-size:12.5px;" title="Ver como cliente">
-            Vista cliente
+        <div class="dance-card-actions">
+          <button type="button" class="btn-secondary" data-edit-dance="${dance.id}" title="Editar danza" aria-label="Editar danza">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            <span class="btn-label">Editar</span>
+          </button>
+          <button type="button" class="btn-ghost" data-view-dance="${dance.id}" title="Ver vestuario completo" aria-label="Ver vestuario completo">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span class="btn-label">Ver</span>
           </button>
         </div>
       `;
@@ -656,8 +654,8 @@ function renderDances() {
         <div class="card-header">
           <h3>${escapeHtml(dance.name)}</h3>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px;">
-            <span style="font-size:12px; color:var(--ink-soft); font-weight:600;">Prendas que incluye el traje:</span>
-            <span class="badge" style="font-size:11px;">${totalGarments} piezas</span>
+            <span style="font-size:11.5px; color:var(--ink-soft); font-weight:600;">Prendas del traje:</span>
+            <span class="badge" style="font-size:11px; white-space:nowrap;">${totalGarments} ${totalGarments === 1 ? 'pieza' : 'piezas'}</span>
           </div>
         </div>
         <ul class="dance-garments-list">${reqsHtml}</ul>
@@ -790,17 +788,17 @@ function getRentalTimeStatus(rental) {
   // Devolución
   if (rental.dateReturn) {
     if (rental.dateReturn < todayStr) {
-      return { type: 'overdue', label: '⚠️ Devolución atrasada', pillClass: 'status-overdue' };
+      return { type: 'overdue', label: 'Devolución atrasada', pillClass: 'status-overdue' };
     }
     if (rental.dateReturn === todayStr) {
-      return { type: 'today_return', label: '🔄 Devolución programada para HOY', pillClass: 'status-today' };
+      return { type: 'today_return', label: 'Devolución programada para HOY', pillClass: 'status-today' };
     }
   }
 
   // Entrega / Salida
   if (rental.dateOut) {
     if (rental.dateOut === todayStr) {
-      return { type: 'today_out', label: '📦 Entrega programada para HOY', pillClass: 'status-today' };
+      return { type: 'today_out', label: 'Entrega programada para HOY', pillClass: 'status-today' };
     }
   }
 
@@ -872,9 +870,9 @@ function renderRentals() {
 
     let statusBadgeHtml = '';
     if (timeStatus.type === 'overdue') {
-      statusBadgeHtml = `<span class="rental-badge alert-overdue">⚠️ Atrasado</span>`;
+      statusBadgeHtml = `<span class="rental-badge alert-overdue">Atrasado</span>`;
     } else if (timeStatus.type === 'today_return' || timeStatus.type === 'today_out') {
-      statusBadgeHtml = `<span class="rental-badge alert-today">🔔 Para Hoy</span>`;
+      statusBadgeHtml = `<span class="rental-badge alert-today">Para Hoy</span>`;
     } else if (isActive) {
       statusBadgeHtml = `<span class="rental-badge active">En préstamo</span>`;
     } else {
@@ -3029,7 +3027,7 @@ function calculateNotifications() {
           client: clientName,
           timeLabel: `Venció el ${formatDateFriendly(r.dateReturn)}`,
           desc: `Los trajes de ${danceTitle} debían devolverse el ${formatDateFriendly(r.dateReturn)}. Comunícate con el cliente o registra la devolución.`,
-          badgeText: '⚠️ Atrasado',
+          badgeText: 'Atrasado',
           badgeClass: 'danger',
           dateSort: new Date(`${r.dateReturn}T00:00:00`).getTime(),
           actionType: 'return'
@@ -3046,7 +3044,7 @@ function calculateNotifications() {
           client: clientName,
           timeLabel: `Hoy ${formatDateFriendly(r.dateReturn)}`,
           desc: `Recepción y chequeo de vestuarios de ${danceTitle} entregados a ${clientName}.`,
-          badgeText: '🔄 Hoy Devolución',
+          badgeText: 'Hoy Devolución',
           badgeClass: 'warning',
           dateSort: new Date(`${r.dateReturn}T00:00:00`).getTime(),
           actionType: 'return'
@@ -3063,7 +3061,7 @@ function calculateNotifications() {
           client: clientName,
           timeLabel: `Mañana ${formatDateFriendly(r.dateReturn)}`,
           desc: `Recordatorio: mañana vence el alquiler de vestuarios de ${danceTitle}.`,
-          badgeText: '📅 Mañana',
+          badgeText: 'Mañana',
           badgeClass: 'info',
           dateSort: new Date(`${r.dateReturn}T00:00:00`).getTime(),
           actionType: 'view'
@@ -3085,7 +3083,7 @@ function calculateNotifications() {
           client: clientName,
           timeLabel: `Hoy ${formatDateFriendly(r.dateOut)}`,
           desc: `Alistar y entregar los trajes de ${danceTitle} a ${clientName}.`,
-          badgeText: '📦 Hoy Entrega',
+          badgeText: 'Hoy Entrega',
           badgeClass: 'info',
           dateSort: new Date(`${r.dateOut}T00:00:00`).getTime(),
           actionType: 'view'
@@ -3102,7 +3100,7 @@ function calculateNotifications() {
           client: clientName,
           timeLabel: `Mañana ${formatDateFriendly(r.dateOut)}`,
           desc: `Preparar y embalar el vestuario de ${danceTitle} para entrega a ${clientName}.`,
-          badgeText: '📦 Mañana Salida',
+          badgeText: 'Mañana Salida',
           badgeClass: 'info',
           dateSort: new Date(`${r.dateOut}T00:00:00`).getTime(),
           actionType: 'view'
@@ -3198,7 +3196,7 @@ function renderNotificationsList(filter = 'all') {
     if (item.actionType === 'return') {
       actionBtnHtml = `
         <button class="btn-primary btn-notif-action" data-notif-action="return" data-rental-id="${item.rentalId}" style="background:var(--accent); color:#FFF; border:none;">
-          ✓ Marcar devuelto
+          Marcar devuelto
         </button>
       `;
     }
