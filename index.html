@@ -331,7 +331,7 @@
 
       <div class="form-grid-2">
         <label class="field">
-          <span class="field-label">Cliente o Colegio / Institución</span>
+          <span class="field-label">Cliente, Colegio o Institución</span>
           <input type="text" id="rental-client" placeholder="Ej. Colegio San Martín, Prof. Carlos">
         </label>
         <label class="field">
@@ -341,56 +341,44 @@
       </div>
 
       <div class="form-grid-2">
-        <div class="field">
-          <span class="field-label">Fecha y Hora de Entrega / Salida</span>
-          <div class="datetime-inputs-row">
-            <input type="date" id="rental-date-out" title="Fecha de entrega">
-            <input type="time" id="rental-time-out" value="09:00" title="Hora de entrega">
-          </div>
-        </div>
-        <div class="field">
-          <span class="field-label">Fecha y Hora de Devolución estimada</span>
-          <div class="datetime-inputs-row">
-            <input type="date" id="rental-date-return" title="Fecha de devolución">
-            <input type="time" id="rental-time-return" value="18:00" title="Hora de devolución">
-          </div>
-        </div>
+        <label class="field">
+          <span class="field-label">Fecha de Entrega / Salida</span>
+          <input type="date" id="rental-date-out" title="Fecha de entrega">
+        </label>
+        <label class="field">
+          <span class="field-label">Fecha de Devolución estimada</span>
+          <input type="date" id="rental-date-return" title="Fecha de devolución">
+        </label>
       </div>
 
       <div class="form-grid-2">
+        <div class="field">
+          <span class="field-label">Danza o Traje a alquilar</span>
+          <input type="text" id="rental-dance-input" list="rental-dance-datalist" placeholder="Buscar o escribir nombre de la danza..." autocomplete="off">
+          <datalist id="rental-dance-datalist"></datalist>
+          <span class="field-hint">Selecciona de la lista o escribe una danza nueva directamente.</span>
+        </div>
         <label class="field">
-          <span class="field-label">Danza o Traje registrado</span>
-          <select id="rental-dance-select">
-            <option value="">-- Seleccionar danza registrada --</option>
-          </select>
-        </label>
-        <label class="field">
-          <span class="field-label">Aviso previo de notificación</span>
+          <span class="field-label">Hora y aviso de notificación</span>
           <select id="rental-alert-advance">
             <option value="none">Sin aviso previo</option>
-            <option value="1h">1 hora antes de la entrega/devolución</option>
-            <option value="2h" selected>2 horas antes</option>
-            <option value="4h">4 horas antes</option>
-            <option value="1d">1 día antes</option>
-            <option value="2d">2 días antes</option>
+            <option value="today" selected>El mismo día (Fecha programada)</option>
+            <option value="1d">1 día antes del evento</option>
+            <option value="2d">2 días antes del evento</option>
+            <option value="2h">2 horas antes</option>
           </select>
         </label>
       </div>
 
-      <label class="field">
-        <span class="field-label">Nombre personalizado de la danza (opcional si no está en la lista)</span>
-        <input type="text" id="rental-dance-custom" placeholder="Ej. Santiago, Marinera Norteña, Caporales">
-      </label>
-
       <!-- PRENDAS / TRAJES LLEVADOS POR TALLA -->
-      <div class="field" style="margin-top:10px;">
+      <div class="field" style="margin-top:4px;">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
           <div>
-            <span class="field-label" style="font-size:15.5px; font-weight:800; margin:0;">
+            <span class="field-label" style="font-size:15px; font-weight:800; margin:0;">
               Trajes Llevados por Talla
             </span>
             <p class="field-hint" style="margin:2px 0 0 0;">
-              Indica la cantidad de cada talla. Para cada persona, todas las prendas de su traje corresponden a su misma talla.
+              Indica la cantidad de trajes por cada talla para Varones y Mujeres.
             </p>
           </div>
           <button type="button" id="btn-toggle-paste-box" class="btn-ghost" style="padding:4px 10px; font-size:12.5px;">
@@ -454,68 +442,26 @@
         </div>
 
         <!-- TOTAL GENERAL LLEVADO -->
-        <div class="rental-total-banner" style="background:#FFFFFF; border:2px solid var(--ink); border-radius:10px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div class="rental-total-banner" style="background:#FFFFFF; border:2px solid var(--ink); border-radius:10px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
           <span style="font-weight:700; font-size:14px;">TOTAL GENERAL LLEVADO:</span>
           <span id="rental-grand-total-badge" style="font-family:var(--font-mono); font-size:16px; font-weight:800; color:var(--accent);">0 trajes</span>
         </div>
-
-        <!-- DETALLE OPCIONAL: LISTA DE NOMBRES DE ALUMNOS -->
-        <details id="details-students-list" style="background:#FFFFFF; border:1px solid var(--line); border-radius:8px; padding:8px 12px;">
-          <summary style="font-size:13px; font-weight:700; cursor:pointer; color:var(--ink-soft); user-select:none;">
-            📝 Lista de nombres de alumnos / integrantes (<span id="students-count-indicator">0 personas</span>)
-          </summary>
-          <div style="margin-top:10px;">
-            <div class="student-add-bar" style="margin-bottom:10px;">
-              <input type="text" id="new-student-name" placeholder="Apellidos y Nombres" style="flex:2; min-width:160px;">
-              <div class="gender-selector">
-                <label class="gender-option gender-male" title="Varón">
-                  <input type="radio" name="new-student-gender" value="male" checked>
-                  <span>Varón</span>
-                </label>
-                <label class="gender-option gender-female" title="Mujer">
-                  <input type="radio" name="new-student-gender" value="female">
-                  <span>Mujer</span>
-                </label>
-              </div>
-              <select id="new-student-size" style="width:105px;">
-                <option value="4">Talla 4</option>
-                <option value="6">Talla 6</option>
-                <option value="8">Talla 8</option>
-                <option value="10">Talla 10</option>
-                <option value="12">Talla 12</option>
-                <option value="14">Talla 14</option>
-                <option value="16">Talla 16</option>
-                <option value="S">Talla S</option>
-                <option value="M">Talla M</option>
-                <option value="L">Talla L</option>
-                <option value="XL">Talla XL</option>
-              </select>
-              <button type="button" id="btn-add-student" class="btn-secondary">+ Agregar</button>
-            </div>
-
-            <div class="students-table-wrap" style="max-height:180px; overflow-y:auto; border:1px solid var(--line); border-radius:6px;">
-              <table class="students-table" style="width:100%; border-collapse:collapse; font-size:12.5px;">
-                <thead>
-                  <tr style="background:var(--surface-alt); text-align:left; border-bottom:1px solid var(--line);">
-                    <th style="padding:6px 8px; width:30px;">#</th>
-                    <th style="padding:6px 8px;">Nombre</th>
-                    <th style="padding:6px 8px; width:90px;">Género</th>
-                    <th style="padding:6px 8px; width:80px;">Talla</th>
-                    <th style="padding:6px 8px; width:35px; text-align:center;"></th>
-                  </tr>
-                </thead>
-                <tbody id="students-table-body"></tbody>
-              </table>
-            </div>
-          </div>
-        </details>
       </div>
 
-      <label class="field" style="margin-top:12px;">
-        <span class="field-label">Notas u observaciones (opcional)</span>
-        <input type="text" id="rental-notes" placeholder="Ej. Dejan DNI de garantía, evento por la tarde">
+      <label class="field" style="margin-top:6px;">
+        <span class="field-label">Notas u opciones adicionales (opcional)</span>
+        <input type="text" id="rental-notes" placeholder="Ej. Dejan DNI de garantía, evento por la tarde, detalles de accesorios">
       </label>
     </div>
+    <div class="modal-foot">
+      <button class="btn-danger-outline hidden" id="btn-delete-rental">Eliminar alquiler</button>
+      <div class="modal-foot-right">
+        <button class="btn-ghost" data-close-modal="modal-rental">Cancelar</button>
+        <button class="btn-primary" id="btn-save-rental">Guardar alquiler</button>
+      </div>
+    </div>
+  </div>
+</div>
     <div class="modal-foot">
       <button class="btn-danger-outline hidden" id="btn-delete-rental">Eliminar alquiler</button>
       <div class="modal-foot-right">
@@ -699,17 +645,21 @@
 
       <div id="admin-login-form-view">
         <p style="font-size:13.5px; color:var(--ink-soft); margin-top:0;">
-          Solo el correo autorizado del administrador tiene permisos para crear, editar o eliminar prendas, danzas y alquileres.
+          Solo el administrador autorizado puede acceder al inventario, alquileres y realizar modificaciones.
         </p>
         <label class="field">
           <span class="field-label">Correo electrónico de Administrador</span>
-          <input type="email" id="admin-email-input" placeholder="ejemplo@gmail.com" value="jhonbastidas2805@gmail.com">
+          <input type="email" id="admin-email-input" placeholder="Ingresa tu correo institucional">
         </label>
-        <p id="admin-login-error" class="hidden" style="color:var(--danger); font-size:12.5px; font-weight:600; margin-top:4px;">
-          Correo no autorizado como administrador.
+        <label class="field" style="margin-top:10px;">
+          <span class="field-label">Clave o PIN de seguridad</span>
+          <input type="password" id="admin-pin-input" placeholder="Ingresa tu clave de acceso (ej. 2805)">
+        </label>
+        <p id="admin-login-error" class="hidden" style="color:var(--danger); font-size:12.5px; font-weight:600; margin-top:6px;">
+          Credenciales incorrectas.
         </p>
-        <div style="background:#F8FAFC; border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-top:8px; font-size:12px; color:var(--ink-soft);">
-          💡 <strong>Nota:</strong> Los clientes y visitantes pueden ver el catálogo de danzas en modo de solo lectura sin necesidad de iniciar sesión.
+        <div style="background:#F8FAFC; border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-top:10px; font-size:12px; color:var(--ink-soft);">
+          💡 <strong>Modo Catálogo:</strong> Los clientes y público general pueden ver el catálogo de danzas libremente en modo lectura sin necesidad de ingresar como administrador.
         </div>
       </div>
     </div>
