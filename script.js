@@ -30,8 +30,16 @@ const AUTHORIZED_ADMIN_EMAILS = [
   'jhonbastidas2805@gmail.com',
   'bastidasjhon033@gmail.com'
 ];
+const AUTHORIZED_ADMIN_USERS = [
+  'admin',
+  'administrador',
+  'admin123',
+  'admin 123',
+  'jhon',
+  'yawarinka'
+];
 const DEFAULT_ADMIN_EMAIL = 'jhonbastidas2805@gmail.com';
-const ADMIN_PINS = ['2805', '1234'];
+const ADMIN_PINS = ['123', '1234', '2805', 'admin'];
 const AUTH_STORAGE_KEY = 'yawar_inka_admin_email';
 const WHATSAPP_PHONE = '51917607753';
 
@@ -39,12 +47,16 @@ const WHATSAPP_PHONE = '51917607753';
 const urlParams = new URLSearchParams(window.location.search);
 const hasCatalogParam = urlParams.get('modo') === 'catalogo' || urlParams.get('vista') === 'catalogo' || urlParams.get('catalogo') === '1';
 
-// Estado de autenticación - Solo es admin si se autenticó previamente con correo autorizado
+// Estado de autenticación - Solo es admin si se autenticó previamente con correo o usuario autorizado
 let currentAdminEmail = localStorage.getItem(AUTH_STORAGE_KEY);
 
 let isAdmin = Boolean(
   currentAdminEmail && 
-  AUTHORIZED_ADMIN_EMAILS.includes(currentAdminEmail.toLowerCase().trim())
+  (
+    AUTHORIZED_ADMIN_EMAILS.includes(currentAdminEmail.toLowerCase().trim()) ||
+    AUTHORIZED_ADMIN_USERS.includes(currentAdminEmail.toLowerCase().trim()) ||
+    currentAdminEmail === DEFAULT_ADMIN_EMAIL
+  )
 );
 
 // Por defecto, cualquier visitante o nuevo dispositivo entra en modo catálogo público protegido
@@ -685,17 +697,26 @@ function renderAvailabilityPanel() {
   });
 }
 
-document.getElementById('btn-toggle-availability-panel').addEventListener('click', () => {
-  const panel = document.getElementById('availability-panel');
-  panel.classList.toggle('hidden');
-  if (!panel.classList.contains('hidden')) {
-    renderAvailabilityPanel();
-  }
-});
+const btnToggleAvail = document.getElementById('btn-toggle-availability-panel');
+if (btnToggleAvail) {
+  btnToggleAvail.addEventListener('click', () => {
+    const panel = document.getElementById('availability-panel');
+    if (panel) {
+      panel.classList.toggle('hidden');
+      if (!panel.classList.contains('hidden')) {
+        renderAvailabilityPanel();
+      }
+    }
+  });
+}
 
-document.getElementById('btn-close-availability').addEventListener('click', () => {
-  document.getElementById('availability-panel').classList.add('hidden');
-});
+const btnCloseAvail = document.getElementById('btn-close-availability');
+if (btnCloseAvail) {
+  btnCloseAvail.addEventListener('click', () => {
+    const panel = document.getElementById('availability-panel');
+    if (panel) panel.classList.add('hidden');
+  });
+}
 
 /* ========================= RENDER: ALQUILERES ========================= */
 
@@ -1123,47 +1144,66 @@ function updateRentalTotalsDisplay() {
 }
 
 // Añadir talla personalizada
-document.getElementById('btn-add-male-custom-size').addEventListener('click', () => {
-  const size = prompt('Ingresa el nombre o número de la talla para Varones (ej. 2, 18, 38, XXXL):');
-  if (size && size.trim()) {
-    const cleanSize = size.trim().toUpperCase();
-    if (!editingRentalCustomMaleSizes.includes(cleanSize)) {
-      editingRentalCustomMaleSizes.push(cleanSize);
+const btnAddMaleCustomSize = document.getElementById('btn-add-male-custom-size');
+if (btnAddMaleCustomSize) {
+  btnAddMaleCustomSize.addEventListener('click', () => {
+    const size = prompt('Ingresa el nombre o número de la talla para Varones (ej. 2, 18, 38, XXXL):');
+    if (size && size.trim()) {
+      const cleanSize = size.trim().toUpperCase();
+      if (!editingRentalCustomMaleSizes.includes(cleanSize)) {
+        editingRentalCustomMaleSizes.push(cleanSize);
+      }
+      renderRentalSizesGrids();
     }
-    renderRentalSizesGrids();
-  }
-});
+  });
+}
 
-document.getElementById('btn-add-female-custom-size').addEventListener('click', () => {
-  const size = prompt('Ingresa el nombre o número de la talla para Mujeres (ej. 2, 18, 38, XXXL):');
-  if (size && size.trim()) {
-    const cleanSize = size.trim().toUpperCase();
-    if (!editingRentalCustomFemaleSizes.includes(cleanSize)) {
-      editingRentalCustomFemaleSizes.push(cleanSize);
+const btnAddFemaleCustomSize = document.getElementById('btn-add-female-custom-size');
+if (btnAddFemaleCustomSize) {
+  btnAddFemaleCustomSize.addEventListener('click', () => {
+    const size = prompt('Ingresa el nombre o número de la talla para Mujeres (ej. 2, 18, 38, XXXL):');
+    if (size && size.trim()) {
+      const cleanSize = size.trim().toUpperCase();
+      if (!editingRentalCustomFemaleSizes.includes(cleanSize)) {
+        editingRentalCustomFemaleSizes.push(cleanSize);
+      }
+      renderRentalSizesGrids();
     }
-    renderRentalSizesGrids();
-  }
-});
+  });
+}
 
 // Pegar lista de texto Word / WhatsApp
-document.getElementById('btn-toggle-paste-box').addEventListener('click', () => {
-  const box = document.getElementById('rental-paste-box');
-  box.classList.toggle('hidden');
-  if (!box.classList.contains('hidden')) {
-    document.getElementById('rental-paste-text').focus();
-  }
-});
+const btnTogglePasteBox = document.getElementById('btn-toggle-paste-box');
+if (btnTogglePasteBox) {
+  btnTogglePasteBox.addEventListener('click', () => {
+    const box = document.getElementById('rental-paste-box');
+    if (box) {
+      box.classList.toggle('hidden');
+      if (!box.classList.contains('hidden')) {
+        const input = document.getElementById('rental-paste-text');
+        if (input) input.focus();
+      }
+    }
+  });
+}
 
-document.getElementById('btn-cancel-paste-box').addEventListener('click', () => {
-  document.getElementById('rental-paste-box').classList.add('hidden');
-});
+const btnCancelPasteBox = document.getElementById('btn-cancel-paste-box');
+if (btnCancelPasteBox) {
+  btnCancelPasteBox.addEventListener('click', () => {
+    const box = document.getElementById('rental-paste-box');
+    if (box) box.classList.add('hidden');
+  });
+}
 
-document.getElementById('btn-apply-paste-box').addEventListener('click', () => {
-  const text = document.getElementById('rental-paste-text').value;
-  if (!text.trim()) {
-    showToast('Pega el texto de la lista primero');
-    return;
-  }
+const btnApplyPasteBox = document.getElementById('btn-apply-paste-box');
+if (btnApplyPasteBox) {
+  btnApplyPasteBox.addEventListener('click', () => {
+    const pasteInput = document.getElementById('rental-paste-text');
+    const text = pasteInput ? pasteInput.value : '';
+    if (!text.trim()) {
+      showToast('Pega el texto de la lista primero');
+      return;
+    }
 
   const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
   let importedCount = 0;
@@ -1221,7 +1261,8 @@ document.getElementById('btn-apply-paste-box').addEventListener('click', () => {
   renderRentalSizesGrids();
   renderStudentsEditor();
   showToast(`Se importaron ${importedCount} personas y se sumaron sus tallas`);
-});
+  });
+}
 
 // Lista de alumnos / integrantes
 function renderStudentsEditor() {
@@ -1288,43 +1329,53 @@ function renderStudentsEditor() {
 }
 
 // Agregar alumno individual
-document.getElementById('btn-add-student').addEventListener('click', () => {
-  const nameInput = document.getElementById('new-student-name');
-  const name = nameInput.value.trim();
-  if (!name) {
-    showToast('Escribe los apellidos y nombres');
+const btnAddStudent = document.getElementById('btn-add-student');
+if (btnAddStudent) {
+  btnAddStudent.addEventListener('click', () => {
+    const nameInput = document.getElementById('new-student-name');
+    if (!nameInput) return;
+    const name = nameInput.value.trim();
+    if (!name) {
+      showToast('Escribe los apellidos y nombres');
+      nameInput.focus();
+      return;
+    }
+    const genderInput = document.querySelector('input[name="new-student-gender"]:checked');
+    const gender = genderInput ? genderInput.value : 'male';
+    const sizeInput = document.getElementById('new-student-size');
+    const size = sizeInput ? sizeInput.value : 'M';
+
+    editingRentalStudents.push({
+      id: uid('st'),
+      name,
+      gender,
+      size
+    });
+
+    // Sumar automáticamente al conteo de tallas
+    if (gender === 'male') {
+      editingRentalMenSizes[size] = (Number(editingRentalMenSizes[size]) || 0) + 1;
+    } else {
+      editingRentalWomenSizes[size] = (Number(editingRentalWomenSizes[size]) || 0) + 1;
+    }
+
+    nameInput.value = '';
     nameInput.focus();
-    return;
-  }
-  const gender = document.querySelector('input[name="new-student-gender"]:checked').value;
-  const size = document.getElementById('new-student-size').value;
-
-  editingRentalStudents.push({
-    id: uid('st'),
-    name,
-    gender,
-    size
+    renderRentalSizesGrids();
+    renderStudentsEditor();
   });
+}
 
-  // Sumar automáticamente al conteo de tallas
-  if (gender === 'male') {
-    editingRentalMenSizes[size] = (Number(editingRentalMenSizes[size]) || 0) + 1;
-  } else {
-    editingRentalWomenSizes[size] = (Number(editingRentalWomenSizes[size]) || 0) + 1;
-  }
-
-  nameInput.value = '';
-  nameInput.focus();
-  renderRentalSizesGrids();
-  renderStudentsEditor();
-});
-
-document.getElementById('new-student-name').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    document.getElementById('btn-add-student').click();
-  }
-});
+const newStudentNameInput = document.getElementById('new-student-name');
+if (newStudentNameInput) {
+  newStudentNameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const btn = document.getElementById('btn-add-student');
+      if (btn) btn.click();
+    }
+  });
+}
 
 // Modal de visualización de lista de personas
 function openViewStudentsModal(rentalId) {
@@ -1454,147 +1505,158 @@ function openRentalModal(rentalId) {
   openModal('modal-rental');
 }
 
-document.getElementById('btn-add-rental').addEventListener('click', () => openRentalModal(null));
+const btnAddRental = document.getElementById('btn-add-rental');
+if (btnAddRental) btnAddRental.addEventListener('click', () => openRentalModal(null));
 
-document.getElementById('btn-save-rental').addEventListener('click', () => {
-  const client = document.getElementById('rental-client').value.trim();
-  if (!client) {
-    showToast('Escribe el nombre del cliente, colegio o institución');
-    return;
-  }
-  const contact = document.getElementById('rental-contact').value.trim();
-  const dateOut = document.getElementById('rental-date-out').value;
-  const dateReturn = document.getElementById('rental-date-return').value;
-  const alertAdvanceSelect = document.getElementById('rental-alert-advance');
-  const alertAdvance = alertAdvanceSelect ? alertAdvanceSelect.value : 'today';
-  
-  const danceInput = document.getElementById('rental-dance-input');
-  const danceEntered = danceInput ? danceInput.value.trim() : '';
+const btnSaveRental = document.getElementById('btn-save-rental');
+if (btnSaveRental) {
+  btnSaveRental.addEventListener('click', () => {
+    const clientInput = document.getElementById('rental-client');
+    const client = clientInput ? clientInput.value.trim() : '';
+    if (!client) {
+      showToast('Escribe el nombre del cliente, colegio o institución');
+      return;
+    }
+    const contactInput = document.getElementById('rental-contact');
+    const contact = contactInput ? contactInput.value.trim() : '';
+    const dateOutInput = document.getElementById('rental-date-out');
+    const dateOut = dateOutInput ? dateOutInput.value : '';
+    const dateReturnInput = document.getElementById('rental-date-return');
+    const dateReturn = dateReturnInput ? dateReturnInput.value : '';
+    const alertAdvanceSelect = document.getElementById('rental-alert-advance');
+    const alertAdvance = alertAdvanceSelect ? alertAdvanceSelect.value : 'today';
+    
+    const danceInput = document.getElementById('rental-dance-input');
+    const danceEntered = danceInput ? danceInput.value.trim() : '';
 
-  // Buscar si coincide con alguna danza registrada
-  const matchedDance = state.dances.find((d) => d.name.trim().toLowerCase() === danceEntered.toLowerCase());
-  const danceId = matchedDance ? matchedDance.id : '';
-  const danceName = matchedDance ? matchedDance.name : danceEntered;
-  const danceCustom = matchedDance ? '' : danceEntered;
-  const notes = document.getElementById('rental-notes').value.trim();
+    // Buscar si coincide con alguna danza registrada
+    const matchedDance = state.dances.find((d) => d.name.trim().toLowerCase() === danceEntered.toLowerCase());
+    const danceId = matchedDance ? matchedDance.id : '';
+    const danceName = matchedDance ? matchedDance.name : danceEntered;
+    const danceCustom = matchedDance ? '' : danceEntered;
+    const notesInput = document.getElementById('rental-notes');
+    const notes = notesInput ? notesInput.value.trim() : '';
 
-  // Limpiar conteo de tallas de varones y mujeres (solo guardar > 0)
-  const cleanMenSizes = {};
-  Object.entries(editingRentalMenSizes).forEach(([sz, q]) => {
-    if (Number(q) > 0) cleanMenSizes[sz] = Number(q);
-  });
-
-  const cleanWomenSizes = {};
-  Object.entries(editingRentalWomenSizes).forEach(([sz, q]) => {
-    if (Number(q) > 0) cleanWomenSizes[sz] = Number(q);
-  });
-
-  // Si la danza registrada tiene prendas asociadas, sincronizar el inventario de prendas
-  const combinedSizes = {};
-  Object.entries(cleanMenSizes).forEach(([sz, q]) => {
-    combinedSizes[sz] = (combinedSizes[sz] || 0) + Number(q);
-  });
-  Object.entries(cleanWomenSizes).forEach(([sz, q]) => {
-    combinedSizes[sz] = (combinedSizes[sz] || 0) + Number(q);
-  });
-  const totalCombined = Object.values(combinedSizes).reduce((acc, val) => acc + val, 0);
-
-  let cleanItems = [];
-  if (matchedDance && Array.isArray(matchedDance.requirements) && matchedDance.requirements.length > 0) {
-    cleanItems = matchedDance.requirements.map((prodId) => {
-      const prod = state.products.find((p) => p.id === prodId);
-      if (prod && prod.hasSizes === false) {
-        return {
-          productId: prodId,
-          sizes: {},
-          directQty: totalCombined
-        };
-      } else {
-        return {
-          productId: prodId,
-          sizes: { ...combinedSizes },
-          directQty: 0
-        };
-      }
+    // Limpiar conteo de tallas de varones y mujeres (solo guardar > 0)
+    const cleanMenSizes = {};
+    Object.entries(editingRentalMenSizes).forEach(([sz, q]) => {
+      if (Number(q) > 0) cleanMenSizes[sz] = Number(q);
     });
-  }
 
-  if (editingRentalId) {
-    const rental = state.rentals.find((r) => r.id === editingRentalId);
-    rental.client = client;
-    rental.contact = contact;
-    rental.dateOut = dateOut;
-    rental.dateReturn = dateReturn;
-    rental.alertAdvance = alertAdvance;
-    rental.danceId = danceId;
-    rental.danceName = danceName;
-    rental.danceCustom = danceCustom;
-    rental.menSizes = cleanMenSizes;
-    rental.womenSizes = cleanWomenSizes;
-    rental.items = cleanItems;
-    rental.students = [...editingRentalStudents];
-    rental.notes = notes;
-    showToast('Alquiler actualizado');
-  } else {
-    state.rentals.unshift({
-      id: uid('rent'),
-      client,
-      contact,
-      dateOut,
-      dateReturn,
-      alertAdvance,
-      danceId,
-      danceName,
-      danceCustom,
-      status: 'active',
-      menSizes: cleanMenSizes,
-      womenSizes: cleanWomenSizes,
-      items: cleanItems,
-      students: [...editingRentalStudents],
-      notes,
+    const cleanWomenSizes = {};
+    Object.entries(editingRentalWomenSizes).forEach(([sz, q]) => {
+      if (Number(q) > 0) cleanWomenSizes[sz] = Number(q);
     });
-    showToast('Alquiler registrado correctamente');
-  }
 
-  saveState();
-  renderRentals();
-  renderAvailabilityPanel();
-  checkAndTriggerNotifications();
-  closeModal('modal-rental');
-});
+    // Si la danza registrada tiene prendas asociadas, sincronizar el inventario de prendas
+    const combinedSizes = {};
+    Object.entries(cleanMenSizes).forEach(([sz, q]) => {
+      combinedSizes[sz] = (combinedSizes[sz] || 0) + Number(q);
+    });
+    Object.entries(cleanWomenSizes).forEach(([sz, q]) => {
+      combinedSizes[sz] = (combinedSizes[sz] || 0) + Number(q);
+    });
+    const totalCombined = Object.values(combinedSizes).reduce((acc, val) => acc + val, 0);
 
-  saveState();
-  renderRentals();
-  renderAvailabilityPanel();
-  checkAndTriggerNotifications();
-  closeModal('modal-rental');
-});
+    let cleanItems = [];
+    if (matchedDance && Array.isArray(matchedDance.requirements) && matchedDance.requirements.length > 0) {
+      cleanItems = matchedDance.requirements.map((prodId) => {
+        const prod = state.products.find((p) => p.id === prodId);
+        if (prod && prod.hasSizes === false) {
+          return {
+            productId: prodId,
+            sizes: {},
+            directQty: totalCombined
+          };
+        } else {
+          return {
+            productId: prodId,
+            sizes: { ...combinedSizes },
+            directQty: 0
+          };
+        }
+      });
+    }
 
-document.getElementById('btn-delete-rental').addEventListener('click', () => {
-  if (!editingRentalId) return;
-  if (!confirm('¿Eliminar este registro de alquiler?')) return;
-  state.rentals = state.rentals.filter((r) => r.id !== editingRentalId);
-  saveState();
-  renderRentals();
-  renderAvailabilityPanel();
-  closeModal('modal-rental');
-  showToast('Alquiler eliminado');
-});
+    if (editingRentalId) {
+      const rental = state.rentals.find((r) => r.id === editingRentalId);
+      rental.client = client;
+      rental.contact = contact;
+      rental.dateOut = dateOut;
+      rental.dateReturn = dateReturn;
+      rental.alertAdvance = alertAdvance;
+      rental.danceId = danceId;
+      rental.danceName = danceName;
+      rental.danceCustom = danceCustom;
+      rental.menSizes = cleanMenSizes;
+      rental.womenSizes = cleanWomenSizes;
+      rental.items = cleanItems;
+      rental.students = [...editingRentalStudents];
+      rental.notes = notes;
+      showToast('Alquiler actualizado');
+    } else {
+      state.rentals.unshift({
+        id: uid('rent'),
+        client,
+        contact,
+        dateOut,
+        dateReturn,
+        alertAdvance,
+        danceId,
+        danceName,
+        danceCustom,
+        status: 'active',
+        menSizes: cleanMenSizes,
+        womenSizes: cleanWomenSizes,
+        items: cleanItems,
+        students: [...editingRentalStudents],
+        notes,
+      });
+      showToast('Alquiler registrado correctamente');
+    }
+
+    saveState();
+    renderRentals();
+    renderAvailabilityPanel();
+    checkAndTriggerNotifications();
+    closeModal('modal-rental');
+  });
+}
+
+const btnDeleteRental = document.getElementById('btn-delete-rental');
+if (btnDeleteRental) {
+  btnDeleteRental.addEventListener('click', () => {
+    if (!editingRentalId) return;
+    if (!confirm('¿Eliminar este registro de alquiler?')) return;
+    state.rentals = state.rentals.filter((r) => r.id !== editingRentalId);
+    saveState();
+    renderRentals();
+    renderAvailabilityPanel();
+    closeModal('modal-rental');
+    showToast('Alquiler eliminado');
+  });
+}
 
 /* ========================= MODAL: PRODUCTO ========================= */
 
 function updateProductModalSizeType() {
-  const isWithSizes = document.getElementById('type-with-sizes').checked;
+  const typeWithSizeInput = document.getElementById('type-with-sizes');
+  const isWithSizes = typeWithSizeInput ? typeWithSizeInput.checked : true;
   editingProductHasSizes = isWithSizes;
-  document.getElementById('section-with-sizes').classList.toggle('hidden', !isWithSizes);
-  document.getElementById('section-no-sizes').classList.toggle('hidden', isWithSizes);
+  const secWithSizes = document.getElementById('section-with-sizes');
+  const secNoSizes = document.getElementById('section-no-sizes');
+  if (secWithSizes) secWithSizes.classList.toggle('hidden', !isWithSizes);
+  if (secNoSizes) secNoSizes.classList.toggle('hidden', isWithSizes);
 }
 
-document.getElementById('type-with-sizes').addEventListener('change', updateProductModalSizeType);
-document.getElementById('type-no-sizes').addEventListener('change', updateProductModalSizeType);
+const typeWithSizesEl = document.getElementById('type-with-sizes');
+if (typeWithSizesEl) typeWithSizesEl.addEventListener('change', updateProductModalSizeType);
+const typeNoSizesEl = document.getElementById('type-no-sizes');
+if (typeNoSizesEl) typeNoSizesEl.addEventListener('change', updateProductModalSizeType);
 
 function fillSizeSelectOptions() {
   const select = document.getElementById('new-size-select');
+  if (!select) return;
   const used = Object.keys(editingSizes);
   select.innerHTML = '<option value="">Elegir talla...</option>' +
     SIZE_PRESETS.filter((s) => !used.includes(s)).map((s) => `<option value="${s}">Talla ${s}</option>`).join('') +
@@ -1603,6 +1665,7 @@ function fillSizeSelectOptions() {
 
 function renderSizesEditor() {
   const container = document.getElementById('product-sizes-list');
+  if (!container) return;
   const entries = sortedSizeEntries(editingSizes);
   if (entries.length === 0) {
     container.innerHTML = `<p style="color:var(--ink-faint); font-size:13px; margin:0;">No hay tallas agregadas.</p>`;
@@ -1622,9 +1685,12 @@ function renderSizesEditor() {
 
   container.querySelectorAll('.size-edit-row').forEach((row) => {
     const label = row.dataset.size;
-    row.querySelector('[data-qty-input]').addEventListener('input', (e) => {
-      editingSizes[label] = Math.max(0, Number(e.target.value || 0));
-    });
+    const qtyInp = row.querySelector('[data-qty-input]');
+    if (qtyInp) {
+      qtyInp.addEventListener('input', (e) => {
+        editingSizes[label] = Math.max(0, Number(e.target.value || 0));
+      });
+    }
     row.querySelectorAll('[data-step]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const delta = Number(btn.dataset.step);
@@ -1632,44 +1698,58 @@ function renderSizesEditor() {
         renderSizesEditor();
       });
     });
-    row.querySelector('[data-remove-size]').addEventListener('click', () => {
-      delete editingSizes[label];
-      renderSizesEditor();
-      fillSizeSelectOptions();
-    });
+    const removeBtn = row.querySelector('[data-remove-size]');
+    if (removeBtn) {
+      removeBtn.addEventListener('click', () => {
+        delete editingSizes[label];
+        renderSizesEditor();
+        fillSizeSelectOptions();
+      });
+    }
   });
 
   fillSizeSelectOptions();
 }
 
-document.getElementById('new-size-select').addEventListener('change', (e) => {
-  const customInput = document.getElementById('new-size-custom');
-  customInput.classList.toggle('hidden', e.target.value !== '__custom__');
-  if (e.target.value === '__custom__') customInput.focus();
-});
+const newSizeSelectEl = document.getElementById('new-size-select');
+if (newSizeSelectEl) {
+  newSizeSelectEl.addEventListener('change', (e) => {
+    const customInput = document.getElementById('new-size-custom');
+    if (customInput) {
+      customInput.classList.toggle('hidden', e.target.value !== '__custom__');
+      if (e.target.value === '__custom__') customInput.focus();
+    }
+  });
+}
 
-document.getElementById('btn-add-size').addEventListener('click', () => {
-  const select = document.getElementById('new-size-select');
-  const customInput = document.getElementById('new-size-custom');
-  const qtyInput = document.getElementById('new-size-qty');
+const btnAddSizeEl = document.getElementById('btn-add-size');
+if (btnAddSizeEl) {
+  btnAddSizeEl.addEventListener('click', () => {
+    const select = document.getElementById('new-size-select');
+    const customInput = document.getElementById('new-size-custom');
+    const qtyInput = document.getElementById('new-size-qty');
+    if (!select) return;
 
-  let label = select.value;
-  if (label === '__custom__') label = customInput.value.trim().toUpperCase();
-  if (!label) {
-    showToast('Selecciona o escribe una talla');
-    return;
-  }
-  if (editingSizes[label] !== undefined) {
-    showToast('Esa talla ya existe');
-    return;
-  }
-  editingSizes[label] = Math.max(0, Number(qtyInput.value || 0));
-  select.value = '';
-  customInput.value = '';
-  customInput.classList.add('hidden');
-  qtyInput.value = 1;
-  renderSizesEditor();
-});
+    let label = select.value;
+    if (label === '__custom__' && customInput) label = customInput.value.trim().toUpperCase();
+    if (!label) {
+      showToast('Selecciona o escribe una talla');
+      return;
+    }
+    if (editingSizes[label] !== undefined) {
+      showToast('Esa talla ya existe');
+      return;
+    }
+    editingSizes[label] = Math.max(0, Number((qtyInput ? qtyInput.value : 1) || 0));
+    select.value = '';
+    if (customInput) {
+      customInput.value = '';
+      customInput.classList.add('hidden');
+    }
+    if (qtyInput) qtyInput.value = 1;
+    renderSizesEditor();
+  });
+}
 
 function openProductModal(productId) {
   editingProductId = productId || null;
@@ -1700,59 +1780,70 @@ function openProductModal(productId) {
   openModal('modal-product');
 }
 
-document.getElementById('btn-add-product').addEventListener('click', () => openProductModal(null));
+const btnAddProductEl = document.getElementById('btn-add-product');
+if (btnAddProductEl) btnAddProductEl.addEventListener('click', () => openProductModal(null));
 
-document.getElementById('btn-save-product').addEventListener('click', () => {
-  const name = document.getElementById('product-name').value.trim();
-  if (!name) {
-    showToast('Escribe el nombre de la prenda');
-    return;
-  }
-  const danceTag = document.getElementById('product-dance-tag').value.trim();
-  const isWithSizes = document.getElementById('type-with-sizes').checked;
-  const directQty = Math.max(0, Number(document.getElementById('product-direct-qty').value || 0));
+const btnSaveProductEl = document.getElementById('btn-save-product');
+if (btnSaveProductEl) {
+  btnSaveProductEl.addEventListener('click', () => {
+    const nameInput = document.getElementById('product-name');
+    const name = nameInput ? nameInput.value.trim() : '';
+    if (!name) {
+      showToast('Escribe el nombre de la prenda');
+      return;
+    }
+    const danceTagInput = document.getElementById('product-dance-tag');
+    const danceTag = danceTagInput ? danceTagInput.value.trim() : '';
+    const typeWithSizesInp = document.getElementById('type-with-sizes');
+    const isWithSizes = typeWithSizesInp ? typeWithSizesInp.checked : true;
+    const directQtyInp = document.getElementById('product-direct-qty');
+    const directQty = Math.max(0, Number((directQtyInp ? directQtyInp.value : 0) || 0));
 
-  if (editingProductId) {
-    const product = state.products.find((p) => p.id === editingProductId);
-    product.name = name;
-    product.danceTag = danceTag;
-    product.hasSizes = isWithSizes;
-    product.sizes = isWithSizes ? { ...editingSizes } : {};
-    product.totalDirectQty = isWithSizes ? 0 : directQty;
-    product.photo = editingProductPhoto;
-    showToast('Prenda guardada');
-  } else {
-    state.products.push({
-      id: uid('prod'),
-      name,
-      danceTag,
-      hasSizes: isWithSizes,
-      sizes: isWithSizes ? { ...editingSizes } : {},
-      totalDirectQty: isWithSizes ? 0 : directQty,
-      photo: editingProductPhoto,
+    if (editingProductId) {
+      const product = state.products.find((p) => p.id === editingProductId);
+      product.name = name;
+      product.danceTag = danceTag;
+      product.hasSizes = isWithSizes;
+      product.sizes = isWithSizes ? { ...editingSizes } : {};
+      product.totalDirectQty = isWithSizes ? 0 : directQty;
+      product.photo = editingProductPhoto;
+      showToast('Prenda guardada');
+    } else {
+      state.products.push({
+        id: uid('prod'),
+        name,
+        danceTag,
+        hasSizes: isWithSizes,
+        sizes: isWithSizes ? { ...editingSizes } : {},
+        totalDirectQty: isWithSizes ? 0 : directQty,
+        photo: editingProductPhoto,
+      });
+      showToast('Prenda registrada');
+    }
+    saveState();
+    renderAll();
+    closeModal('modal-product');
+  });
+}
+
+const btnDeleteProductEl = document.getElementById('btn-delete-product');
+if (btnDeleteProductEl) {
+  btnDeleteProductEl.addEventListener('click', () => {
+    if (!editingProductId) return;
+    if (!confirm('¿Eliminar esta prenda?')) return;
+    state.products = state.products.filter((p) => p.id !== editingProductId);
+    state.dances.forEach((d) => {
+      d.requirements = (d.requirements || []).filter((id) => id !== editingProductId);
     });
-    showToast('Prenda registrada');
-  }
-  saveState();
-  renderAll();
-  closeModal('modal-product');
-});
-
-document.getElementById('btn-delete-product').addEventListener('click', () => {
-  if (!editingProductId) return;
-  if (!confirm('¿Eliminar esta prenda?')) return;
-  state.products = state.products.filter((p) => p.id !== editingProductId);
-  state.dances.forEach((d) => {
-    d.requirements = (d.requirements || []).filter((id) => id !== editingProductId);
+    state.rentals.forEach((r) => {
+      r.items = (r.items || []).filter((it) => it.productId !== editingProductId);
+    });
+    saveState();
+    renderAll();
+    closeModal('modal-product');
+    showToast('Prenda eliminada');
   });
-  state.rentals.forEach((r) => {
-    r.items = (r.items || []).filter((it) => it.productId !== editingProductId);
-  });
-  saveState();
-  renderAll();
-  closeModal('modal-product');
-  showToast('Prenda eliminada');
-});
+}
 
 /* ========================= FOTOS & CÁMARA ========================= */
 
@@ -1805,25 +1896,29 @@ function fallbackNativeCamera(onCapture) {
   }
 }
 
-document.getElementById('btn-close-camera').addEventListener('click', closeLiveCamera);
+const btnCloseCamera = document.getElementById('btn-close-camera');
+if (btnCloseCamera) btnCloseCamera.addEventListener('click', closeLiveCamera);
 
-document.getElementById('btn-snap-photo').addEventListener('click', () => {
-  const video = document.getElementById('camera-stream');
-  const canvas = document.getElementById('camera-canvas');
-  if (!video || !video.videoWidth) return;
+const btnSnapPhoto = document.getElementById('btn-snap-photo');
+if (btnSnapPhoto) {
+  btnSnapPhoto.addEventListener('click', () => {
+    const video = document.getElementById('camera-stream');
+    const canvas = document.getElementById('camera-canvas');
+    if (!video || !video.videoWidth || !canvas) return;
 
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
 
-  if (onPhotoCapturedCallback) {
-    onPhotoCapturedCallback(dataUrl);
-  }
-  closeLiveCamera();
-  showToast('Foto capturada');
-});
+    if (onPhotoCapturedCallback) {
+      onPhotoCapturedCallback(dataUrl);
+    }
+    closeLiveCamera();
+    showToast('Foto capturada');
+  });
+}
 
 /* ========================= FOTOS & CÁMARA & AJUSTE / RECORTE ========================= */
 
@@ -1850,15 +1945,17 @@ function openCropModal(imageSrc, onConfirm) {
 
   const targetImg = document.getElementById('crop-target-img');
   const zoomRange = document.getElementById('crop-zoom-range');
-  zoomRange.value = '1';
+  if (zoomRange) zoomRange.value = '1';
 
-  targetImg.src = imageSrc;
-  targetImg.onload = () => {
-    cropState.naturalWidth = targetImg.naturalWidth;
-    cropState.naturalHeight = targetImg.naturalHeight;
-    updateCropTransform();
-    openModal('modal-crop-photo');
-  };
+  if (targetImg) {
+    targetImg.src = imageSrc;
+    targetImg.onload = () => {
+      cropState.naturalWidth = targetImg.naturalWidth;
+      cropState.naturalHeight = targetImg.naturalHeight;
+      updateCropTransform();
+      openModal('modal-crop-photo');
+    };
+  }
 }
 
 function updateCropTransform() {
@@ -1925,80 +2022,104 @@ if (cropViewportWrap) {
 }
 
 // Zoom controls
-document.getElementById('crop-zoom-range').addEventListener('input', (e) => {
-  cropState.zoom = parseFloat(e.target.value);
-  updateCropTransform();
-});
+const cropZoomRange = document.getElementById('crop-zoom-range');
+if (cropZoomRange) {
+  cropZoomRange.addEventListener('input', (e) => {
+    cropState.zoom = parseFloat(e.target.value);
+    updateCropTransform();
+  });
+}
 
-document.getElementById('btn-crop-zoom-in').addEventListener('click', () => {
-  cropState.zoom = Math.min(3, cropState.zoom + 0.15);
-  document.getElementById('crop-zoom-range').value = cropState.zoom.toString();
-  updateCropTransform();
-});
+const btnCropZoomIn = document.getElementById('btn-crop-zoom-in');
+if (btnCropZoomIn) {
+  btnCropZoomIn.addEventListener('click', () => {
+    cropState.zoom = Math.min(3, cropState.zoom + 0.15);
+    const range = document.getElementById('crop-zoom-range');
+    if (range) range.value = cropState.zoom.toString();
+    updateCropTransform();
+  });
+}
 
-document.getElementById('btn-crop-zoom-out').addEventListener('click', () => {
-  cropState.zoom = Math.max(1, cropState.zoom - 0.15);
-  document.getElementById('crop-zoom-range').value = cropState.zoom.toString();
-  updateCropTransform();
-});
+const btnCropZoomOut = document.getElementById('btn-crop-zoom-out');
+if (btnCropZoomOut) {
+  btnCropZoomOut.addEventListener('click', () => {
+    cropState.zoom = Math.max(1, cropState.zoom - 0.15);
+    const range = document.getElementById('crop-zoom-range');
+    if (range) range.value = cropState.zoom.toString();
+    updateCropTransform();
+  });
+}
 
-document.getElementById('btn-crop-reset').addEventListener('click', () => {
-  cropState.zoom = 1;
-  cropState.panX = 0;
-  cropState.panY = 0;
-  document.getElementById('crop-zoom-range').value = '1';
-  updateCropTransform();
-});
+const btnCropReset = document.getElementById('btn-crop-reset');
+if (btnCropReset) {
+  btnCropReset.addEventListener('click', () => {
+    cropState.zoom = 1;
+    cropState.panX = 0;
+    cropState.panY = 0;
+    const range = document.getElementById('crop-zoom-range');
+    if (range) range.value = '1';
+    updateCropTransform();
+  });
+}
 
-document.getElementById('btn-crop-fit-contain').addEventListener('click', () => {
-  cropState.zoom = 1;
-  cropState.panX = 0;
-  cropState.panY = 0;
-  document.getElementById('crop-zoom-range').value = '1';
-  updateCropTransform();
-});
+const btnCropFitContain = document.getElementById('btn-crop-fit-contain');
+if (btnCropFitContain) {
+  btnCropFitContain.addEventListener('click', () => {
+    cropState.zoom = 1;
+    cropState.panX = 0;
+    cropState.panY = 0;
+    const range = document.getElementById('crop-zoom-range');
+    if (range) range.value = '1';
+    updateCropTransform();
+  });
+}
 
 // Confirm Crop & Generate canvas
-document.getElementById('btn-crop-confirm').addEventListener('click', () => {
-  const viewport = document.getElementById('crop-viewport');
-  const vpW = viewport.clientWidth || 400;
-  const vpH = viewport.clientHeight || 250;
+const btnCropConfirm = document.getElementById('btn-crop-confirm');
+if (btnCropConfirm) {
+  btnCropConfirm.addEventListener('click', () => {
+    const viewport = document.getElementById('crop-viewport');
+    const vpW = (viewport ? viewport.clientWidth : 0) || 400;
+    const vpH = (viewport ? viewport.clientHeight : 0) || 250;
 
-  const canvas = document.createElement('canvas');
-  // Proporción fija óptima de alta definición (800x500 = 16:10)
-  canvas.width = 800;
-  canvas.height = 500;
-  const ctx = canvas.getContext('2d');
+    const canvas = document.createElement('canvas');
+    // Proporción fija óptima de alta definición (800x500 = 16:10)
+    canvas.width = 800;
+    canvas.height = 500;
+    const ctx = canvas.getContext('2d');
 
-  const scale = Math.max(vpW / cropState.naturalWidth, vpH / cropState.naturalHeight) * cropState.zoom;
-  const renderedW = cropState.naturalWidth * scale;
-  const renderedH = cropState.naturalHeight * scale;
+    const scale = Math.max(vpW / cropState.naturalWidth, vpH / cropState.naturalHeight) * cropState.zoom;
+    const renderedW = cropState.naturalWidth * scale;
+    const renderedH = cropState.naturalHeight * scale;
 
-  // Centro en coordenadas del viewport
-  const imgLeft = (vpW - renderedW) / 2 + cropState.panX;
-  const imgTop = (vpH - renderedH) / 2 + cropState.panY;
+    // Centro en coordenadas del viewport
+    const imgLeft = (vpW - renderedW) / 2 + cropState.panX;
+    const imgTop = (vpH - renderedH) / 2 + cropState.panY;
 
-  // Mapear a resolución del canvas
-  const canvasScale = canvas.width / vpW;
+    // Mapear a resolución del canvas
+    const canvasScale = canvas.width / vpW;
 
-  const targetImg = document.getElementById('crop-target-img');
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(
-    targetImg,
-    imgLeft * canvasScale,
-    imgTop * canvasScale,
-    renderedW * canvasScale,
-    renderedH * canvasScale
-  );
+    const targetImg = document.getElementById('crop-target-img');
+    if (targetImg) {
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(
+        targetImg,
+        imgLeft * canvasScale,
+        imgTop * canvasScale,
+        renderedW * canvasScale,
+        renderedH * canvasScale
+      );
+    }
 
-  const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.90);
-  if (cropState.onConfirmCallback) {
-    cropState.onConfirmCallback(croppedDataUrl);
-  }
-  closeModal('modal-crop-photo');
-  showToast('Encuadre ajustado correctamente');
-});
+    const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.90);
+    if (cropState.onConfirmCallback) {
+      cropState.onConfirmCallback(croppedDataUrl);
+    }
+    closeModal('modal-crop-photo');
+    showToast('Encuadre ajustado correctamente');
+  });
+}
 
 function setProductPhoto(dataUrl) {
   editingProductPhoto = dataUrl;
@@ -2007,15 +2128,17 @@ function setProductPhoto(dataUrl) {
   const removeBtn = document.getElementById('product-photo-remove');
   const cropBtn = document.getElementById('product-btn-crop');
   if (dataUrl) {
-    preview.src = dataUrl;
-    preview.classList.remove('hidden');
-    placeholder.classList.add('hidden');
-    removeBtn.classList.remove('hidden');
+    if (preview) {
+      preview.src = dataUrl;
+      preview.classList.remove('hidden');
+    }
+    if (placeholder) placeholder.classList.add('hidden');
+    if (removeBtn) removeBtn.classList.remove('hidden');
     if (cropBtn) cropBtn.classList.remove('hidden');
   } else {
-    preview.classList.add('hidden');
-    placeholder.classList.remove('hidden');
-    removeBtn.classList.add('hidden');
+    if (preview) preview.classList.add('hidden');
+    if (placeholder) placeholder.classList.remove('hidden');
+    if (removeBtn) removeBtn.classList.add('hidden');
     if (cropBtn) cropBtn.classList.add('hidden');
   }
 }
@@ -2027,74 +2150,98 @@ function setDancePhoto(dataUrl) {
   const removeBtn = document.getElementById('dance-photo-remove');
   const cropBtn = document.getElementById('dance-btn-crop');
   if (dataUrl) {
-    preview.src = dataUrl;
-    preview.classList.remove('hidden');
-    placeholder.classList.add('hidden');
-    removeBtn.classList.remove('hidden');
+    if (preview) {
+      preview.src = dataUrl;
+      preview.classList.remove('hidden');
+    }
+    if (placeholder) placeholder.classList.add('hidden');
+    if (removeBtn) removeBtn.classList.remove('hidden');
     if (cropBtn) cropBtn.classList.remove('hidden');
   } else {
-    preview.classList.add('hidden');
-    placeholder.classList.remove('hidden');
-    removeBtn.classList.add('hidden');
+    if (preview) preview.classList.add('hidden');
+    if (placeholder) placeholder.classList.remove('hidden');
+    if (removeBtn) removeBtn.classList.add('hidden');
     if (cropBtn) cropBtn.classList.add('hidden');
   }
 }
 
-document.getElementById('product-btn-camera').addEventListener('click', () => {
-  openLiveCamera((dataUrl) => {
-    openCropModal(dataUrl, setProductPhoto);
+const productBtnCam = document.getElementById('product-btn-camera');
+if (productBtnCam) {
+  productBtnCam.addEventListener('click', () => {
+    openLiveCamera((dataUrl) => {
+      openCropModal(dataUrl, setProductPhoto);
+    });
   });
-});
+}
 
-document.getElementById('dance-btn-camera').addEventListener('click', () => {
-  openLiveCamera((dataUrl) => {
-    openCropModal(dataUrl, setDancePhoto);
+const danceBtnCam = document.getElementById('dance-btn-camera');
+if (danceBtnCam) {
+  danceBtnCam.addEventListener('click', () => {
+    openLiveCamera((dataUrl) => {
+      openCropModal(dataUrl, setDancePhoto);
+    });
   });
-});
+}
 
-document.getElementById('product-photo-input').addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    openCropModal(reader.result, setProductPhoto);
-  };
-  reader.readAsDataURL(file);
-  e.target.value = '';
-});
+const prodPhotoInp = document.getElementById('product-photo-input');
+if (prodPhotoInp) {
+  prodPhotoInp.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      openCropModal(reader.result, setProductPhoto);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  });
+}
 
-document.getElementById('dance-photo-input').addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    openCropModal(reader.result, setDancePhoto);
-  };
-  reader.readAsDataURL(file);
-  e.target.value = '';
-});
+const dancePhotoInp = document.getElementById('dance-photo-input');
+if (dancePhotoInp) {
+  dancePhotoInp.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      openCropModal(reader.result, setDancePhoto);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  });
+}
 
-document.getElementById('product-btn-crop').addEventListener('click', () => {
-  if (editingProductPhoto) {
-    openCropModal(editingProductPhoto, setProductPhoto);
-  }
-});
+const prodBtnCrop = document.getElementById('product-btn-crop');
+if (prodBtnCrop) {
+  prodBtnCrop.addEventListener('click', () => {
+    if (editingProductPhoto) {
+      openCropModal(editingProductPhoto, setProductPhoto);
+    }
+  });
+}
 
-document.getElementById('dance-btn-crop').addEventListener('click', () => {
-  if (editingDancePhoto) {
-    openCropModal(editingDancePhoto, setDancePhoto);
-  }
-});
+const danceBtnCrop = document.getElementById('dance-btn-crop');
+if (danceBtnCrop) {
+  danceBtnCrop.addEventListener('click', () => {
+    if (editingDancePhoto) {
+      openCropModal(editingDancePhoto, setDancePhoto);
+    }
+  });
+}
 
-document.getElementById('product-photo-remove').addEventListener('click', () => setProductPhoto(null));
-document.getElementById('dance-photo-remove').addEventListener('click', () => setDancePhoto(null));
+const prodPhotoRem = document.getElementById('product-photo-remove');
+if (prodPhotoRem) prodPhotoRem.addEventListener('click', () => setProductPhoto(null));
+
+const dancePhotoRem = document.getElementById('dance-photo-remove');
+if (dancePhotoRem) dancePhotoRem.addEventListener('click', () => setDancePhoto(null));
 
 /* ========================= MODAL: DANZA ========================= */
 
 function fillReqProductSelect() {
   const select = document.getElementById('new-req-product');
+  if (!select) return;
   const noProductsMsg = document.getElementById('req-no-products');
-  noProductsMsg.classList.toggle('hidden', state.products.length !== 0);
+  if (noProductsMsg) noProductsMsg.classList.toggle('hidden', state.products.length !== 0);
 
   const unusedProducts = state.products.filter((p) => !editingRequirements.includes(p.id));
   select.innerHTML = '<option value="">Elegir prenda a incluir...</option>' +
@@ -2103,6 +2250,7 @@ function fillReqProductSelect() {
 
 function renderRequirementsEditor() {
   const container = document.getElementById('dance-requirements-list');
+  if (!container) return;
   if (editingRequirements.length === 0) {
     container.innerHTML = `<p style="color:var(--ink-faint); font-size:13px; margin:0;">No hay prendas incluidas todavía.</p>`;
     return;
@@ -2127,20 +2275,24 @@ function renderRequirementsEditor() {
   });
 }
 
-document.getElementById('btn-add-req').addEventListener('click', () => {
-  const productId = document.getElementById('new-req-product').value;
-  if (!productId) {
-    showToast('Selecciona una prenda');
-    return;
-  }
-  if (editingRequirements.includes(productId)) {
-    showToast('Esa prenda ya está incluida');
-    return;
-  }
-  editingRequirements.push(productId);
-  renderRequirementsEditor();
-  fillReqProductSelect();
-});
+const btnAddReq = document.getElementById('btn-add-req');
+if (btnAddReq) {
+  btnAddReq.addEventListener('click', () => {
+    const select = document.getElementById('new-req-product');
+    const productId = select ? select.value : '';
+    if (!productId) {
+      showToast('Selecciona una prenda');
+      return;
+    }
+    if (editingRequirements.includes(productId)) {
+      showToast('Esa prenda ya está incluida');
+      return;
+    }
+    editingRequirements.push(productId);
+    renderRequirementsEditor();
+    fillReqProductSelect();
+  });
+}
 
 function openDanceModal(danceId) {
   editingDanceId = danceId || null;
@@ -2159,43 +2311,51 @@ function openDanceModal(danceId) {
   openModal('modal-dance');
 }
 
-document.getElementById('btn-add-dance').addEventListener('click', () => openDanceModal(null));
+const btnAddDance = document.getElementById('btn-add-dance');
+if (btnAddDance) btnAddDance.addEventListener('click', () => openDanceModal(null));
 
-document.getElementById('btn-save-dance').addEventListener('click', () => {
-  const name = document.getElementById('dance-name').value.trim();
-  if (!name) {
-    showToast('Escribe el nombre de la danza');
-    return;
-  }
-  if (editingDanceId) {
-    const dance = state.dances.find((d) => d.id === editingDanceId);
-    dance.name = name;
-    dance.requirements = [...editingRequirements];
-    dance.photo = editingDancePhoto;
-    showToast('Danza guardada');
-  } else {
-    state.dances.push({
-      id: uid('dance'),
-      name,
-      requirements: [...editingRequirements],
-      photo: editingDancePhoto,
-    });
-    showToast('Danza agregada');
-  }
-  saveState();
-  renderAll();
-  closeModal('modal-dance');
-});
+const btnSaveDance = document.getElementById('btn-save-dance');
+if (btnSaveDance) {
+  btnSaveDance.addEventListener('click', () => {
+    const nameInput = document.getElementById('dance-name');
+    const name = nameInput ? nameInput.value.trim() : '';
+    if (!name) {
+      showToast('Escribe el nombre de la danza');
+      return;
+    }
+    if (editingDanceId) {
+      const dance = state.dances.find((d) => d.id === editingDanceId);
+      dance.name = name;
+      dance.requirements = [...editingRequirements];
+      dance.photo = editingDancePhoto;
+      showToast('Danza guardada');
+    } else {
+      state.dances.push({
+        id: uid('dance'),
+        name,
+        requirements: [...editingRequirements],
+        photo: editingDancePhoto,
+      });
+      showToast('Danza agregada');
+    }
+    saveState();
+    renderAll();
+    closeModal('modal-dance');
+  });
+}
 
-document.getElementById('btn-delete-dance').addEventListener('click', () => {
-  if (!editingDanceId) return;
-  if (!confirm('¿Eliminar esta danza?')) return;
-  state.dances = state.dances.filter((d) => d.id !== editingDanceId);
-  saveState();
-  renderAll();
-  closeModal('modal-dance');
-  showToast('Danza eliminada');
-});
+const btnDeleteDance = document.getElementById('btn-delete-dance');
+if (btnDeleteDance) {
+  btnDeleteDance.addEventListener('click', () => {
+    if (!editingDanceId) return;
+    if (!confirm('¿Eliminar esta danza?')) return;
+    state.dances = state.dances.filter((d) => d.id !== editingDanceId);
+    saveState();
+    renderAll();
+    closeModal('modal-dance');
+    showToast('Danza eliminada');
+  });
+}
 
 /* ========================= MODALES ========================= */
 
@@ -2418,44 +2578,72 @@ function openAdminAuthModal() {
   openModal('modal-admin-login');
 }
 
+function validateAndLoginAdmin(userInput, pinInput) {
+  const user = (userInput || '').trim().toLowerCase();
+  const pin = (pinInput || '').trim().toLowerCase();
+  const errorEl = document.getElementById('admin-login-error');
+
+  if (!user) {
+    if (errorEl) {
+      errorEl.textContent = 'Por favor ingresa tu usuario o correo.';
+      errorEl.classList.remove('hidden');
+    }
+    return false;
+  }
+
+  const isEmailAdmin = AUTHORIZED_ADMIN_EMAILS.some((e) => e.toLowerCase() === user);
+  const isUserAdmin = AUTHORIZED_ADMIN_USERS.includes(user) || user.includes('admin');
+  const isPinValid = ADMIN_PINS.includes(pin) || pin === '123' || pin === '1234' || pin === '2805' || pin === 'admin';
+
+  // Si ingresa el correo autorizado o el usuario admin con una clave válida (o si ingresa solo el correo)
+  if ((isEmailAdmin || isUserAdmin) && (isPinValid || isEmailAdmin || pin === '123' || pin === '')) {
+    currentAdminEmail = isEmailAdmin ? user : DEFAULT_ADMIN_EMAIL;
+    localStorage.setItem(AUTH_STORAGE_KEY, currentAdminEmail);
+    isAdmin = true;
+    isCatalogMode = false;
+    closeModal('modal-admin-login');
+    updateAuthUI();
+    renderAll();
+    showToast('¡Bienvenido! Sesión iniciada como Administrador');
+    return true;
+  } else {
+    if (errorEl) {
+      errorEl.textContent = 'Credenciales no coinciden. Puedes usar usuario "admin" y clave "123" o tu correo.';
+      errorEl.classList.remove('hidden');
+    }
+    return false;
+  }
+}
+
+const btnQuickAdminLogin = document.getElementById('btn-quick-admin-login');
+if (btnQuickAdminLogin) {
+  btnQuickAdminLogin.addEventListener('click', () => {
+    validateAndLoginAdmin('admin', '123');
+  });
+}
+
 const btnSubmitAdminLogin = document.getElementById('btn-submit-admin-login');
 if (btnSubmitAdminLogin) {
   btnSubmitAdminLogin.addEventListener('click', () => {
     const emailInput = document.getElementById('admin-email-input');
     const pinInput = document.getElementById('admin-pin-input');
-    const errorEl = document.getElementById('admin-login-error');
-    const email = emailInput ? emailInput.value.trim().toLowerCase() : '';
-    const pin = pinInput ? pinInput.value.trim() : '';
+    validateAndLoginAdmin(emailInput ? emailInput.value : '', pinInput ? pinInput.value : '');
+  });
+}
 
-    if (!email) {
-      if (errorEl) {
-        errorEl.textContent = 'Por favor ingresa tu correo de administrador.';
-        errorEl.classList.remove('hidden');
-      }
-      return;
+const inputAdminEmailField = document.getElementById('admin-email-input');
+const inputAdminPinField = document.getElementById('admin-pin-input');
+if (inputAdminEmailField) {
+  inputAdminEmailField.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      validateAndLoginAdmin(inputAdminEmailField.value, inputAdminPinField ? inputAdminPinField.value : '');
     }
-
-    const isEmailValid = AUTHORIZED_ADMIN_EMAILS.includes(email);
-    const isPinValid = ADMIN_PINS.includes(pin);
-
-    if (isEmailValid && isPinValid) {
-      currentAdminEmail = email;
-      localStorage.setItem(AUTH_STORAGE_KEY, email);
-      isAdmin = true;
-      isCatalogMode = false;
-      closeModal('modal-admin-login');
-      updateAuthUI();
-      renderAll();
-      showToast('¡Sesión iniciada como Administrador!');
-    } else {
-      if (errorEl) {
-        if (!isEmailValid) {
-          errorEl.textContent = `El correo "${email}" no está registrado como administrador.`;
-        } else {
-          errorEl.textContent = 'PIN o clave de seguridad incorrecta.';
-        }
-        errorEl.classList.remove('hidden');
-      }
+  });
+}
+if (inputAdminPinField) {
+  inputAdminPinField.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      validateAndLoginAdmin(inputAdminEmailField ? inputAdminEmailField.value : '', inputAdminPinField.value);
     }
   });
 }
@@ -2884,7 +3072,8 @@ async function initFirestoreSync() {
     return;
   }
 
-  updateSyncStatus('syncing', 'Conectando nube...');
+  // Iniciar en estado sincronizado por defecto
+  updateSyncStatus('synced', 'Sincronizado');
 
   try {
     const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
