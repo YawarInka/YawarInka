@@ -33,31 +33,56 @@ const AUTHORIZED_ADMIN_EMAILS = [
 const AUTHORIZED_ADMIN_USERS = [
   'admin',
   'administrador',
-  'admin123',
-  'admin 123',
   'jhon',
-  'yawarinka'
+  'yawarinka',
+  'bastidas'
 ];
 const DEFAULT_ADMIN_EMAIL = 'jhonbastidas2805@gmail.com';
-const ADMIN_PINS = ['123', '1234', '2805', 'admin'];
-const AUTH_STORAGE_KEY = 'yawar_inka_admin_email';
+const AUTH_STORAGE_KEY = 'yawar_inka_admin_session_token';
+const AUTH_PASS_STORAGE_KEY = 'yawar_inka_admin_custom_password';
 const WHATSAPP_PHONE = '51917607753';
 
 // Verificar si se ingresó mediante enlace público de catálogo (?modo=catalogo)
 const urlParams = new URLSearchParams(window.location.search);
 const hasCatalogParam = urlParams.get('modo') === 'catalogo' || urlParams.get('vista') === 'catalogo' || urlParams.get('catalogo') === '1';
 
-// Estado de autenticación - Solo es admin si se autenticó previamente con correo o usuario autorizado
-let currentAdminEmail = localStorage.getItem(AUTH_STORAGE_KEY);
+// Estado de autenticación - Carga de sesión
+let currentAdminEmail = null;
+let isAdmin = false;
 
-let isAdmin = Boolean(
-  currentAdminEmail && 
-  (
-    AUTHORIZED_ADMIN_EMAILS.includes(currentAdminEmail.toLowerCase().trim()) ||
-    AUTHORIZED_ADMIN_USERS.includes(currentAdminEmail.toLowerCase().trim()) ||
-    currentAdminEmail === DEFAULT_ADMIN_EMAIL
-  )
-);
+function initAuthSession() {
+  if (hasCatalogParam) {
+    // Si viene explícitamente con enlace de catálogo público para clientes, entrar en modo catálogo
+    isAdmin = false;
+    currentAdminEmail = null;
+    return;
+  }
+
+  // Buscar sesión guardada persistente (localStorage) o temporal de pestaña (sessionStorage)
+  let rawSession = localStorage.getItem(AUTH_STORAGE_KEY) || sessionStorage.getItem(AUTH_STORAGE_KEY);
+  if (rawSession) {
+    try {
+      const sessionObj = JSON.parse(rawSession);
+      if (sessionObj && sessionObj.user) {
+        currentAdminEmail = sessionObj.user;
+        isAdmin = true;
+        return;
+      }
+    } catch (e) {
+      if (typeof rawSession === 'string' && rawSession.trim()) {
+        currentAdminEmail = rawSession.trim();
+        isAdmin = true;
+        return;
+      }
+    }
+  }
+
+  // Si no hay sesión válida activa guardada en este dispositivo
+  currentAdminEmail = null;
+  isAdmin = false;
+}
+
+initAuthSession();
 
 // Por defecto, cualquier visitante o nuevo dispositivo entra en modo catálogo público protegido
 let isCatalogMode = !isAdmin || hasCatalogParam;
@@ -311,17 +336,25 @@ function updateAuthUI() {
   const footerActions = document.getElementById('footer-admin-actions');
   const footerAdminLink = document.getElementById('footer-admin-link');
   const brandSub = document.getElementById('brand-subtitle');
+  const cloudSyncEl = document.getElementById('cloud-sync-status');
+  const btnNotifications = document.getElementById('btn-open-notifications');
+  const btnShareTopbar = document.getElementById('btn-share-catalog-topbar');
 
   if (!isAdmin || isCatalogMode) {
-    // Modo Catálogo / No admin
+    // Modo Catálogo / No admin (visitante o cliente)
     if (authContainer) {
       authContainer.innerHTML = `
-        <button type="button" class="auth-badge-catalog" id="btn-open-auth-modal" title="Acceso para el administrador de YAWAR INKA">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          <span>Catálogo de Danzas</span>
+        <button type="button" class="btn-login-topbar" id="btn-open-auth-modal" title="Iniciar sesión como Administrador">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          <span>Iniciar sesión</span>
         </button>
       `;
     }
+
+    // Ocultar indicadores técnicos y de control interno para el público
+    if (cloudSyncEl) cloudSyncEl.classList.add('hidden');
+    if (btnNotifications) btnNotifications.classList.add('hidden');
+    if (btnShareTopbar) btnShareTopbar.classList.add('hidden');
 
     if (tabInventario) tabInventario.classList.add('hidden');
     if (tabAlquileres) tabAlquileres.classList.add('hidden');
@@ -347,6 +380,11 @@ function updateAuthUI() {
         </button>
       `;
     }
+
+    // Mostrar herramientas administrativas
+    if (cloudSyncEl) cloudSyncEl.classList.remove('hidden');
+    if (btnNotifications) btnNotifications.classList.remove('hidden');
+    if (btnShareTopbar) btnShareTopbar.classList.remove('hidden');
 
     if (tabInventario) tabInventario.classList.remove('hidden');
     if (tabAlquileres) tabAlquileres.classList.remove('hidden');
@@ -501,7 +539,7 @@ function renderProducts() {
     }
 
     const photoHtml = product.photo
-      ? `<img src="${product.photo}" alt="Foto de ${escapeHtml(product.name)}">`
+      ? `<img src="${product.photo}" alt="Foto de ${escapeHtml(product.name)}" loading="lazy">`
       : `<span class="placeholder-icon">${ICON_GARMENT}</span>`;
 
     const card = document.createElement('article');
@@ -565,7 +603,7 @@ function renderDances() {
 
   list.forEach((dance) => {
     const photoHtml = dance.photo
-      ? `<img src="${dance.photo}" alt="Foto de ${escapeHtml(dance.name)}">`
+      ? `<img src="${dance.photo}" alt="Foto de ${escapeHtml(dance.name)}" loading="lazy">`
       : `<span class="placeholder-icon">${ICON_DANCE}</span>`;
 
     const totalGarments = (dance.requirements || []).length;
@@ -1654,21 +1692,73 @@ if (typeWithSizesEl) typeWithSizesEl.addEventListener('change', updateProductMod
 const typeNoSizesEl = document.getElementById('type-no-sizes');
 if (typeNoSizesEl) typeNoSizesEl.addEventListener('change', updateProductModalSizeType);
 
+function renderQuickSizePresets() {
+  const container = document.getElementById('quick-size-presets');
+  if (!container) return;
+  const used = Object.keys(editingSizes);
+  
+  // Lista de tallas rápidas predeterminadas
+  const presets = [...SIZE_PRESETS, 'Estándar'];
+  
+  container.innerHTML = presets.map((s) => {
+    const isAdded = used.includes(s);
+    return `
+      <button type="button" class="size-preset-pill ${isAdded ? 'active' : ''}" data-preset-size="${escapeHtml(s)}" title="${isAdded ? 'Talla ya agregada' : 'Clic para agregar esta talla automáticamente'}">
+        ${isAdded ? '✓ ' : '+ '}Talla ${escapeHtml(s)}
+      </button>
+    `;
+  }).join('');
+
+  container.querySelectorAll('[data-preset-size]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const s = btn.dataset.presetSize;
+      const qtyInput = document.getElementById('new-size-qty');
+      const qtyToAdd = Math.max(1, Number(qtyInput ? qtyInput.value : 1) || 1);
+
+      if (editingSizes[s] === undefined) {
+        editingSizes[s] = qtyToAdd;
+        showToast(`Talla ${s} agregada (${qtyToAdd} und.)`);
+      } else {
+        // Si ya está, enfocar o incrementar
+        showToast(`Talla ${s} seleccionada`);
+      }
+      if (qtyInput) qtyInput.value = 1;
+      renderSizesEditor();
+      
+      // Enfocar input de esa talla para que el usuario pueda tipear otra cantidad de inmediato
+      const row = document.querySelector(`.size-edit-row[data-size="${CSS.escape(s)}"] input[data-qty-input]`);
+      if (row) {
+        row.focus();
+        row.select();
+      }
+    });
+  });
+}
+
 function fillSizeSelectOptions() {
   const select = document.getElementById('new-size-select');
   if (!select) return;
   const used = Object.keys(editingSizes);
-  select.innerHTML = '<option value="">Elegir talla...</option>' +
+  select.innerHTML = '<option value="">Elegir otra talla...</option>' +
     SIZE_PRESETS.filter((s) => !used.includes(s)).map((s) => `<option value="${s}">Talla ${s}</option>`).join('') +
     '<option value="__custom__">Otra talla personalizada...</option>';
 }
 
 function renderSizesEditor() {
   const container = document.getElementById('product-sizes-list');
+  const totalBadge = document.getElementById('product-sizes-total-badge');
   if (!container) return;
+
   const entries = sortedSizeEntries(editingSizes);
+  let totalUnits = 0;
+  entries.forEach(([, q]) => { totalUnits += Number(q || 0); });
+
+  if (totalBadge) {
+    totalBadge.textContent = `${totalUnits} ${totalUnits === 1 ? 'und.' : 'unidades'}`;
+  }
+
   if (entries.length === 0) {
-    container.innerHTML = `<p style="color:var(--ink-faint); font-size:13px; margin:0;">No hay tallas agregadas.</p>`;
+    container.innerHTML = `<p style="color:var(--ink-faint); font-size:13px; margin:0; padding:4px 0;">No hay tallas agregadas. Toca una talla arriba para agregarla automáticamente.</p>`;
   } else {
     container.innerHTML = entries.map(([label, qty]) => `
       <div class="size-edit-row" data-size="${escapeHtml(label)}">
@@ -1689,6 +1779,15 @@ function renderSizesEditor() {
     if (qtyInp) {
       qtyInp.addEventListener('input', (e) => {
         editingSizes[label] = Math.max(0, Number(e.target.value || 0));
+        let curTotal = 0;
+        Object.values(editingSizes).forEach((q) => { curTotal += Number(q || 0); });
+        if (totalBadge) totalBadge.textContent = `${curTotal} ${curTotal === 1 ? 'und.' : 'unidades'}`;
+      });
+      qtyInp.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          document.getElementById('new-size-select')?.focus();
+        }
       });
     }
     row.querySelectorAll('[data-step]').forEach((btn) => {
@@ -1704,20 +1803,84 @@ function renderSizesEditor() {
         delete editingSizes[label];
         renderSizesEditor();
         fillSizeSelectOptions();
+        renderQuickSizePresets();
       });
     }
   });
 
   fillSizeSelectOptions();
+  renderQuickSizePresets();
+}
+
+function handleAddSizeFromInputs(autoFocusNext = false) {
+  const select = document.getElementById('new-size-select');
+  const customInput = document.getElementById('new-size-custom');
+  const qtyInput = document.getElementById('new-size-qty');
+  if (!select) return;
+
+  let label = select.value;
+  if (label === '__custom__' && customInput) label = customInput.value.trim().toUpperCase();
+  if (!label) return;
+
+  const qty = Math.max(1, Number(qtyInput ? qtyInput.value : 1) || 1);
+
+  if (editingSizes[label] !== undefined) {
+    editingSizes[label] = Number(editingSizes[label] || 0) + qty;
+    showToast(`Talla ${label} actualizada (+${qty})`);
+  } else {
+    editingSizes[label] = qty;
+    showToast(`Talla ${label} agregada (${qty} und.)`);
+  }
+
+  select.value = '';
+  if (customInput) {
+    customInput.value = '';
+    customInput.classList.add('hidden');
+  }
+  if (qtyInput) qtyInput.value = 1;
+  renderSizesEditor();
+
+  if (autoFocusNext) {
+    const row = document.querySelector(`.size-edit-row[data-size="${CSS.escape(label)}"] input[data-qty-input]`);
+    if (row) {
+      row.focus();
+      row.select();
+    }
+  }
 }
 
 const newSizeSelectEl = document.getElementById('new-size-select');
 if (newSizeSelectEl) {
   newSizeSelectEl.addEventListener('change', (e) => {
     const customInput = document.getElementById('new-size-custom');
-    if (customInput) {
-      customInput.classList.toggle('hidden', e.target.value !== '__custom__');
-      if (e.target.value === '__custom__') customInput.focus();
+    if (e.target.value === '__custom__') {
+      if (customInput) {
+        customInput.classList.remove('hidden');
+        customInput.focus();
+      }
+    } else if (e.target.value !== '') {
+      // Auto-agregar de inmediato al seleccionar la talla
+      handleAddSizeFromInputs(true);
+    }
+  });
+}
+
+const newSizeCustomEl = document.getElementById('new-size-custom');
+if (newSizeCustomEl) {
+  newSizeCustomEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddSizeFromInputs(true);
+    }
+  });
+}
+
+const newSizeQtyEl = document.getElementById('new-size-qty');
+if (newSizeQtyEl) {
+  newSizeQtyEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddSizeFromInputs(true);
     }
   });
 }
@@ -1725,29 +1888,7 @@ if (newSizeSelectEl) {
 const btnAddSizeEl = document.getElementById('btn-add-size');
 if (btnAddSizeEl) {
   btnAddSizeEl.addEventListener('click', () => {
-    const select = document.getElementById('new-size-select');
-    const customInput = document.getElementById('new-size-custom');
-    const qtyInput = document.getElementById('new-size-qty');
-    if (!select) return;
-
-    let label = select.value;
-    if (label === '__custom__' && customInput) label = customInput.value.trim().toUpperCase();
-    if (!label) {
-      showToast('Selecciona o escribe una talla');
-      return;
-    }
-    if (editingSizes[label] !== undefined) {
-      showToast('Esa talla ya existe');
-      return;
-    }
-    editingSizes[label] = Math.max(0, Number((qtyInput ? qtyInput.value : 1) || 0));
-    select.value = '';
-    if (customInput) {
-      customInput.value = '';
-      customInput.classList.add('hidden');
-    }
-    if (qtyInput) qtyInput.value = 1;
-    renderSizesEditor();
+    handleAddSizeFromInputs(false);
   });
 }
 
@@ -2083,9 +2224,9 @@ if (btnCropConfirm) {
     const vpH = (viewport ? viewport.clientHeight : 0) || 250;
 
     const canvas = document.createElement('canvas');
-    // Proporción fija óptima de alta definición (800x500 = 16:10)
-    canvas.width = 800;
-    canvas.height = 500;
+    // Proporción vertical estética 3:4 optimizada y liviana (480x640)
+    canvas.width = 480;
+    canvas.height = 640;
     const ctx = canvas.getContext('2d');
 
     const scale = Math.max(vpW / cropState.naturalWidth, vpH / cropState.naturalHeight) * cropState.zoom;
@@ -2112,7 +2253,7 @@ if (btnCropConfirm) {
       );
     }
 
-    const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.90);
+    const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
     if (cropState.onConfirmCallback) {
       cropState.onConfirmCallback(croppedDataUrl);
     }
@@ -2237,60 +2378,131 @@ if (dancePhotoRem) dancePhotoRem.addEventListener('click', () => setDancePhoto(n
 
 /* ========================= MODAL: DANZA ========================= */
 
-function fillReqProductSelect() {
-  const select = document.getElementById('new-req-product');
-  if (!select) return;
+function renderDanceGarmentsSlider() {
+  const slider = document.getElementById('dance-available-garments-slider');
+  const searchInput = document.getElementById('dance-req-search-input');
+  const clearBtn = document.getElementById('btn-clear-dance-req-search');
   const noProductsMsg = document.getElementById('req-no-products');
-  if (noProductsMsg) noProductsMsg.classList.toggle('hidden', state.products.length !== 0);
 
-  const unusedProducts = state.products.filter((p) => !editingRequirements.includes(p.id));
-  select.innerHTML = '<option value="">Elegir prenda a incluir...</option>' +
-    unusedProducts.map((p) => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+  if (!slider) return;
+
+  if (noProductsMsg) {
+    noProductsMsg.classList.toggle('hidden', state.products.length !== 0);
+  }
+
+  const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+  if (clearBtn) {
+    clearBtn.classList.toggle('hidden', !query);
+  }
+
+  const filteredProducts = state.products.filter((p) => {
+    if (!query) return true;
+    const nameMatch = p.name && p.name.toLowerCase().includes(query);
+    const tagMatch = p.danceTag && p.danceTag.toLowerCase().includes(query);
+    return nameMatch || tagMatch;
+  });
+
+  if (state.products.length === 0) {
+    slider.innerHTML = `<p style="grid-column:1/-1; color:var(--ink-faint); font-size:12.5px; margin:4px 0;">No hay prendas registradas todavía. Crea prendas en la pestaña Productos.</p>`;
+    return;
+  }
+
+  if (filteredProducts.length === 0) {
+    slider.innerHTML = `<p style="grid-column:1/-1; color:var(--ink-faint); font-size:12.5px; margin:6px 0; text-align:center;">No se encontró «${escapeHtml(query)}». Prueba con otro término.</p>`;
+    return;
+  }
+
+  slider.innerHTML = filteredProducts.map((p) => {
+    const isSelected = editingRequirements.includes(p.id);
+    const thumbHtml = p.photo
+      ? `<img src="${p.photo}" alt="${escapeHtml(p.name)}" loading="lazy">`
+      : `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z"/></svg>`;
+
+    return `
+      <div class="dance-garment-select-card ${isSelected ? 'selected' : ''}" data-product-id="${p.id}">
+        <div class="dance-garment-thumb">${thumbHtml}</div>
+        <span class="dance-garment-select-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</span>
+        <button type="button" class="dance-garment-select-btn">${isSelected ? '✓ En el traje' : '+ Agregar'}</button>
+      </div>
+    `;
+  }).join('');
+
+  slider.querySelectorAll('.dance-garment-select-card').forEach((card) => {
+    card.addEventListener('click', () => {
+      const productId = card.dataset.productId;
+      const product = state.products.find((p) => p.id === productId);
+      const isSelected = editingRequirements.includes(productId);
+
+      if (isSelected) {
+        editingRequirements = editingRequirements.filter((id) => id !== productId);
+        showToast(`«${product ? product.name : 'Prenda'}» quitada del traje`);
+      } else {
+        editingRequirements.push(productId);
+        showToast(`«${product ? product.name : 'Prenda'}» agregada al traje`);
+      }
+
+      renderRequirementsEditor();
+      renderDanceGarmentsSlider();
+    });
+  });
 }
 
 function renderRequirementsEditor() {
   const container = document.getElementById('dance-requirements-list');
+  const badge = document.getElementById('dance-req-count-badge');
   if (!container) return;
+
+  if (badge) {
+    const count = editingRequirements.length;
+    badge.textContent = `${count} ${count === 1 ? 'prenda' : 'prendas'}`;
+  }
+
   if (editingRequirements.length === 0) {
-    container.innerHTML = `<p style="color:var(--ink-faint); font-size:13px; margin:0;">No hay prendas incluidas todavía.</p>`;
+    container.innerHTML = `<p style="color:var(--ink-faint); font-size:13px; margin:0; padding:6px 0;">No hay prendas incluidas todavía. Toca una prenda de la lista o búscala abajo para agregarla automáticamente.</p>`;
     return;
   }
+
   container.innerHTML = editingRequirements.map((productId, idx) => {
     const product = state.products.find((p) => p.id === productId);
     const name = product ? product.name : '(prenda eliminada)';
+    const thumb = product && product.photo
+      ? `<img src="${product.photo}" alt="" style="width:24px; height:30px; object-fit:cover; border-radius:3px; border:1px solid #CBD5E1; margin-right:6px; flex-shrink:0;">`
+      : '';
+
     return `
       <div class="req-edit-row" data-idx="${idx}">
+        ${thumb}
         <span class="req-edit-text"><b>${escapeHtml(name)}</b></span>
-        <button type="button" class="icon-btn remove-x" data-remove-req="${idx}" title="Quitar">✕</button>
+        <button type="button" class="icon-btn remove-x" data-remove-req="${idx}" title="Quitar prenda del traje">✕</button>
       </div>
     `;
   }).join('');
 
   container.querySelectorAll('[data-remove-req]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      editingRequirements.splice(Number(btn.dataset.removeReq), 1);
+      const idx = Number(btn.dataset.removeReq);
+      editingRequirements.splice(idx, 1);
       renderRequirementsEditor();
-      fillReqProductSelect();
+      renderDanceGarmentsSlider();
     });
   });
 }
 
-const btnAddReq = document.getElementById('btn-add-req');
-if (btnAddReq) {
-  btnAddReq.addEventListener('click', () => {
-    const select = document.getElementById('new-req-product');
-    const productId = select ? select.value : '';
-    if (!productId) {
-      showToast('Selecciona una prenda');
-      return;
+const danceReqSearchInp = document.getElementById('dance-req-search-input');
+if (danceReqSearchInp) {
+  danceReqSearchInp.addEventListener('input', () => {
+    renderDanceGarmentsSlider();
+  });
+}
+
+const btnClearDanceReqSearch = document.getElementById('btn-clear-dance-req-search');
+if (btnClearDanceReqSearch) {
+  btnClearDanceReqSearch.addEventListener('click', () => {
+    if (danceReqSearchInp) {
+      danceReqSearchInp.value = '';
+      danceReqSearchInp.focus();
     }
-    if (editingRequirements.includes(productId)) {
-      showToast('Esa prenda ya está incluida');
-      return;
-    }
-    editingRequirements.push(productId);
-    renderRequirementsEditor();
-    fillReqProductSelect();
+    renderDanceGarmentsSlider();
   });
 }
 
@@ -2306,8 +2518,11 @@ function openDanceModal(danceId) {
   editingRequirements = dance ? [...(dance.requirements || [])] : [];
   setDancePhoto(dance ? dance.photo : null);
 
-  fillReqProductSelect();
+  const searchInp = document.getElementById('dance-req-search-input');
+  if (searchInp) searchInp.value = '';
+
   renderRequirementsEditor();
+  renderDanceGarmentsSlider();
   openModal('modal-dance');
 }
 
@@ -2557,14 +2772,18 @@ function openAdminAuthModal() {
   const modalFoot = document.getElementById('admin-login-modal-foot');
   const currentEmailDisplay = document.getElementById('current-admin-email-display');
   const errorEl = document.getElementById('admin-login-error');
+  const changePassBox = document.getElementById('change-password-box');
 
   if (errorEl) errorEl.classList.add('hidden');
+  if (changePassBox) changePassBox.classList.add('hidden');
 
   if (isAdmin && !isCatalogMode) {
     if (loggedInView) loggedInView.classList.remove('hidden');
     if (loginFormView) loginFormView.classList.add('hidden');
     if (modalFoot) modalFoot.classList.add('hidden');
-    if (currentEmailDisplay) currentEmailDisplay.textContent = `Correo: ${currentAdminEmail || ''}`;
+    if (currentEmailDisplay) {
+      currentEmailDisplay.textContent = `Identificador: ${currentAdminEmail || 'Administrador YAWAR INKA'}`;
+    }
   } else {
     if (loggedInView) loggedInView.classList.add('hidden');
     if (loginFormView) loginFormView.classList.remove('hidden');
@@ -2578,27 +2797,54 @@ function openAdminAuthModal() {
   openModal('modal-admin-login');
 }
 
-function validateAndLoginAdmin(userInput, pinInput) {
+function validateAndLoginAdmin(userInput, passwordInput, rememberMe = true) {
   const user = (userInput || '').trim().toLowerCase();
-  const pin = (pinInput || '').trim().toLowerCase();
+  const pass = (passwordInput || '').trim();
   const errorEl = document.getElementById('admin-login-error');
+  const errorText = document.getElementById('admin-login-error-text');
+
+  const showError = (msg) => {
+    if (errorText) errorText.textContent = msg;
+    if (errorEl) errorEl.classList.remove('hidden');
+  };
 
   if (!user) {
-    if (errorEl) {
-      errorEl.textContent = 'Por favor ingresa tu usuario o correo.';
-      errorEl.classList.remove('hidden');
-    }
+    showError('Por favor escribe tu usuario o correo.');
+    return false;
+  }
+  if (!pass) {
+    showError('Por favor escribe tu contraseña.');
     return false;
   }
 
+  // Verificar usuario autorizado
   const isEmailAdmin = AUTHORIZED_ADMIN_EMAILS.some((e) => e.toLowerCase() === user);
-  const isUserAdmin = AUTHORIZED_ADMIN_USERS.includes(user) || user.includes('admin');
-  const isPinValid = ADMIN_PINS.includes(pin) || pin === '123' || pin === '1234' || pin === '2805' || pin === 'admin';
+  const isUserAdmin = AUTHORIZED_ADMIN_USERS.includes(user);
 
-  // Si ingresa el correo autorizado o el usuario admin con una clave válida (o si ingresa solo el correo)
-  if ((isEmailAdmin || isUserAdmin) && (isPinValid || isEmailAdmin || pin === '123' || pin === '')) {
-    currentAdminEmail = isEmailAdmin ? user : DEFAULT_ADMIN_EMAIL;
-    localStorage.setItem(AUTH_STORAGE_KEY, currentAdminEmail);
+  // Verificar contraseña
+  const customPass = localStorage.getItem(AUTH_PASS_STORAGE_KEY);
+  let isPassValid = false;
+  if (customPass) {
+    isPassValid = (pass === customPass);
+  } else {
+    isPassValid = (pass === '123' || pass === '2805' || pass === 'admin123' || pass === 'yawarinka');
+  }
+
+  if ((isEmailAdmin || isUserAdmin) && isPassValid) {
+    currentAdminEmail = isEmailAdmin ? user : 'Administrador';
+    const sessionData = {
+      user: currentAdminEmail,
+      createdAt: Date.now()
+    };
+
+    if (rememberMe) {
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(sessionData));
+      sessionStorage.removeItem(AUTH_STORAGE_KEY);
+    } else {
+      sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(sessionData));
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+    }
+
     isAdmin = true;
     isCatalogMode = false;
     closeModal('modal-admin-login');
@@ -2607,54 +2853,57 @@ function validateAndLoginAdmin(userInput, pinInput) {
     showToast('¡Bienvenido! Sesión iniciada como Administrador');
     return true;
   } else {
-    if (errorEl) {
-      errorEl.textContent = 'Credenciales no coinciden. Puedes usar usuario "admin" y clave "123" o tu correo.';
-      errorEl.classList.remove('hidden');
-    }
+    showError('Usuario o contraseña incorrectos. Verifica tus datos e intenta nuevamente.');
     return false;
   }
 }
 
-const btnQuickAdminLogin = document.getElementById('btn-quick-admin-login');
-if (btnQuickAdminLogin) {
-  btnQuickAdminLogin.addEventListener('click', () => {
-    validateAndLoginAdmin('admin', '123');
-  });
-}
-
+// Botón Enviar Login
 const btnSubmitAdminLogin = document.getElementById('btn-submit-admin-login');
 if (btnSubmitAdminLogin) {
   btnSubmitAdminLogin.addEventListener('click', () => {
     const emailInput = document.getElementById('admin-email-input');
     const pinInput = document.getElementById('admin-pin-input');
-    validateAndLoginAdmin(emailInput ? emailInput.value : '', pinInput ? pinInput.value : '');
+    const rememberMeCheck = document.getElementById('admin-remember-me');
+    const remember = rememberMeCheck ? rememberMeCheck.checked : true;
+    validateAndLoginAdmin(
+      emailInput ? emailInput.value : '',
+      pinInput ? pinInput.value : '',
+      remember
+    );
   });
 }
 
+// Atajos Enter en campos de login
 const inputAdminEmailField = document.getElementById('admin-email-input');
 const inputAdminPinField = document.getElementById('admin-pin-input');
-if (inputAdminEmailField) {
-  inputAdminEmailField.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      validateAndLoginAdmin(inputAdminEmailField.value, inputAdminPinField ? inputAdminPinField.value : '');
-    }
-  });
+function handleLoginEnterKey(e) {
+  if (e.key === 'Enter') {
+    const emailVal = inputAdminEmailField ? inputAdminEmailField.value : '';
+    const pinVal = inputAdminPinField ? inputAdminPinField.value : '';
+    const rememberMeCheck = document.getElementById('admin-remember-me');
+    const remember = rememberMeCheck ? rememberMeCheck.checked : true;
+    validateAndLoginAdmin(emailVal, pinVal, remember);
+  }
 }
-if (inputAdminPinField) {
-  inputAdminPinField.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      validateAndLoginAdmin(inputAdminEmailField ? inputAdminEmailField.value : '', inputAdminPinField.value);
-    }
-  });
-}
+if (inputAdminEmailField) inputAdminEmailField.addEventListener('keydown', handleLoginEnterKey);
+if (inputAdminPinField) inputAdminPinField.addEventListener('keydown', handleLoginEnterKey);
 
+// Cerrar sesión
 const btnLogoutAdmin = document.getElementById('btn-logout-admin');
 if (btnLogoutAdmin) {
   btnLogoutAdmin.addEventListener('click', () => {
     currentAdminEmail = null;
     localStorage.removeItem(AUTH_STORAGE_KEY);
+    sessionStorage.removeItem(AUTH_STORAGE_KEY);
     isAdmin = false;
     isCatalogMode = true;
+
+    const emailInp = document.getElementById('admin-email-input');
+    const pinInp = document.getElementById('admin-pin-input');
+    if (emailInp) emailInp.value = '';
+    if (pinInp) pinInp.value = '';
+
     closeModal('modal-admin-login');
     updateAuthUI();
     renderAll();
@@ -2662,6 +2911,7 @@ if (btnLogoutAdmin) {
   });
 }
 
+// Ver en modo catálogo
 const btnViewAsCatalog = document.getElementById('btn-view-as-catalog');
 if (btnViewAsCatalog) {
   btnViewAsCatalog.addEventListener('click', () => {
@@ -2669,27 +2919,76 @@ if (btnViewAsCatalog) {
     closeModal('modal-admin-login');
     updateAuthUI();
     renderAll();
-    showToast('Vista previa de cliente activa');
+    showToast('Visualizando en modo cliente');
+  });
+}
+
+// Cambiar contraseña de Administrador
+const btnToggleChangePass = document.getElementById('btn-toggle-change-password');
+const changePassBox = document.getElementById('change-password-box');
+const changePassToggleIcon = document.getElementById('change-pass-toggle-icon');
+if (btnToggleChangePass && changePassBox) {
+  btnToggleChangePass.addEventListener('click', () => {
+    const isHidden = changePassBox.classList.contains('hidden');
+    if (isHidden) {
+      changePassBox.classList.remove('hidden');
+      if (changePassToggleIcon) changePassToggleIcon.textContent = '▲';
+    } else {
+      changePassBox.classList.add('hidden');
+      if (changePassToggleIcon) changePassToggleIcon.textContent = '▼';
+    }
+  });
+}
+
+const btnCancelChangePass = document.getElementById('btn-cancel-change-pass');
+if (btnCancelChangePass && changePassBox) {
+  btnCancelChangePass.addEventListener('click', () => {
+    changePassBox.classList.add('hidden');
+    if (changePassToggleIcon) changePassToggleIcon.textContent = '▼';
+  });
+}
+
+const btnSaveNewPass = document.getElementById('btn-save-new-pass');
+if (btnSaveNewPass) {
+  btnSaveNewPass.addEventListener('click', () => {
+    const currentPassInp = document.getElementById('change-pass-current');
+    const newPassInp = document.getElementById('change-pass-new');
+    const passErr = document.getElementById('change-pass-error');
+
+    const cur = (currentPassInp ? currentPassInp.value : '').trim();
+    const nw = (newPassInp ? newPassInp.value : '').trim();
+
+    const showPassErr = (msg) => {
+      if (passErr) {
+        passErr.textContent = msg;
+        passErr.classList.remove('hidden');
+      }
+    };
+
+    if (!cur) return showPassErr('Ingresa tu contraseña actual.');
+    if (!nw || nw.length < 3) return showPassErr('La nueva contraseña debe tener al menos 3 caracteres.');
+
+    const savedPass = localStorage.getItem(AUTH_PASS_STORAGE_KEY);
+    const isCurValid = savedPass ? (cur === savedPass) : (cur === '123' || cur === '2805' || cur === 'admin');
+
+    if (!isCurValid) {
+      return showPassErr('La contraseña actual no es correcta.');
+    }
+
+    localStorage.setItem(AUTH_PASS_STORAGE_KEY, nw);
+    if (passErr) passErr.classList.add('hidden');
+    if (currentPassInp) currentPassInp.value = '';
+    if (newPassInp) newPassInp.value = '';
+    if (changePassBox) changePassBox.classList.add('hidden');
+    if (changePassToggleIcon) changePassToggleIcon.textContent = '▼';
+    showToast('¡Contraseña de administrador actualizada con éxito!');
   });
 }
 
 const footerAdminLink = document.getElementById('footer-admin-link');
 if (footerAdminLink) {
   footerAdminLink.addEventListener('click', () => {
-    if (isCatalogMode) {
-      // Salir de modo catálogo o abrir login
-      if (currentAdminEmail) {
-        isCatalogMode = false;
-        isAdmin = true;
-        updateAuthUI();
-        renderAll();
-        showToast('Modo Administrador activado');
-      } else {
-        openAdminAuthModal();
-      }
-    } else {
-      openAdminAuthModal();
-    }
+    openAdminAuthModal();
   });
 }
 
