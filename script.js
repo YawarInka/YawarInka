@@ -26,7 +26,12 @@ let state = loadState();
 
 /* ========================= CONTROL DE ACCESO Y MODO CATÁLOGO ========================= */
 
+const AUTHORIZED_ADMIN_EMAILS = [
+  'jhonbastidas2805@gmail.com',
+  'bastidasjhon033@gmail.com'
+];
 const DEFAULT_ADMIN_EMAIL = 'jhonbastidas2805@gmail.com';
+const ADMIN_PINS = ['2805', '1234'];
 const AUTH_STORAGE_KEY = 'yawar_inka_admin_email';
 const WHATSAPP_PHONE = '51917607753';
 
@@ -34,21 +39,16 @@ const WHATSAPP_PHONE = '51917607753';
 const urlParams = new URLSearchParams(window.location.search);
 const hasCatalogParam = urlParams.get('modo') === 'catalogo' || urlParams.get('vista') === 'catalogo' || urlParams.get('catalogo') === '1';
 
-// Estado de autenticación
+// Estado de autenticación - Solo es admin si se autenticó previamente con correo autorizado
 let currentAdminEmail = localStorage.getItem(AUTH_STORAGE_KEY);
-if (currentAdminEmail === null && !hasCatalogParam) {
-  // Si es la sesión del dueño por defecto
-  currentAdminEmail = DEFAULT_ADMIN_EMAIL;
-  localStorage.setItem(AUTH_STORAGE_KEY, currentAdminEmail);
-}
 
-let isCatalogMode = hasCatalogParam;
-let isAdmin = Boolean(currentAdminEmail && currentAdminEmail.toLowerCase().trim() === DEFAULT_ADMIN_EMAIL.toLowerCase().trim());
+let isAdmin = Boolean(
+  currentAdminEmail && 
+  AUTHORIZED_ADMIN_EMAILS.includes(currentAdminEmail.toLowerCase().trim())
+);
 
-// Si se ingresó expresamente por el link de catálogo, se inicia en modo catálogo público
-if (hasCatalogParam) {
-  isCatalogMode = true;
-}
+// Por defecto, cualquier visitante o nuevo dispositivo entra en modo catálogo público protegido
+let isCatalogMode = !isAdmin || hasCatalogParam;
 
 // Estado temporal modal Producto
 let editingProductId = null;
@@ -730,26 +730,18 @@ function getRentalTimeStatus(rental) {
 
   // Devolución
   if (rental.dateReturn) {
-    const returnTime = rental.timeReturn || '18:00';
-    const returnDateTime = new Date(`${rental.dateReturn}T${returnTime}:00`);
-    if (!isNaN(returnDateTime.getTime())) {
-      if (returnDateTime < now) {
-        return { type: 'overdue', label: '⚠️ Devolución atrasada', pillClass: 'status-overdue' };
-      }
-      if (rental.dateReturn === todayStr) {
-        return { type: 'today_return', label: `🔄 Devolver HOY a las ${formatTime12h(returnTime)}`, pillClass: 'status-today' };
-      }
+    if (rental.dateReturn < todayStr) {
+      return { type: 'overdue', label: '⚠️ Devolución atrasada', pillClass: 'status-overdue' };
+    }
+    if (rental.dateReturn === todayStr) {
+      return { type: 'today_return', label: '🔄 Devolución programada para HOY', pillClass: 'status-today' };
     }
   }
 
   // Entrega / Salida
   if (rental.dateOut) {
-    const outTime = rental.timeOut || '09:00';
-    const outDateTime = new Date(`${rental.dateOut}T${outTime}:00`);
-    if (!isNaN(outDateTime.getTime())) {
-      if (rental.dateOut === todayStr) {
-        return { type: 'today_out', label: `📦 Entregar HOY a las ${formatTime12h(outTime)}`, pillClass: 'status-today' };
-      }
+    if (rental.dateOut === todayStr) {
+      return { type: 'today_out', label: '📦 Entrega programada para HOY', pillClass: 'status-today' };
     }
   }
 
@@ -864,12 +856,9 @@ function renderRentals() {
       ? `<span>Contacto: <strong>${escapeHtml(rental.contact)}</strong></span>`
       : '';
 
-    // Fecha y hora formateadas
-    const timeOutFormatted = rental.timeOut ? ` · ${formatTime12h(rental.timeOut)}` : '';
-    const dateOutFormatted = rental.dateOut ? `${formatDateFriendly(rental.dateOut)}${timeOutFormatted}` : 'No especificada';
-
-    const timeReturnFormatted = rental.timeReturn ? ` · ${formatTime12h(rental.timeReturn)}` : '';
-    const dateReturnFormatted = rental.dateReturn ? `${formatDateFriendly(rental.dateReturn)}${timeReturnFormatted}` : '';
+    // Fecha formateada (limpia y amigable)
+    const dateOutFormatted = rental.dateOut ? formatDateFriendly(rental.dateOut) : 'No especificada';
+    const dateReturnFormatted = rental.dateReturn ? formatDateFriendly(rental.dateReturn) : '';
 
     const dateReturnInfo = dateReturnFormatted
       ? `<span>Devolución: <strong>${escapeHtml(dateReturnFormatted)}</strong></span>`
@@ -1416,22 +1405,11 @@ function openViewStudentsModal(rentalId) {
 
 /* ========================= MODAL: ALQUILER ========================= */
 
-function fillRentalDanceSelect(selectedDanceId) {
-  const select = document.getElementById('rental-dance-select');
-  select.innerHTML = '<option value="">-- Seleccionar danza registrada --</option>' +
-    state.dances.map((d) => `<option value="${d.id}" ${d.id === selectedDanceId ? 'selected' : ''}>${escapeHtml(d.name)}</option>`).join('');
+function fillRentalDanceDatalist() {
+  const datalist = document.getElementById('rental-dance-datalist');
+  if (!datalist) return;
+  datalist.innerHTML = state.dances.map((d) => `<option value="${escapeHtml(d.name)}"></option>`).join('');
 }
-
-document.getElementById('rental-dance-select').addEventListener('change', (e) => {
-  const danceId = e.target.value;
-  const customInput = document.getElementById('rental-dance-custom');
-  if (danceId) {
-    const danceObj = state.dances.find((d) => d.id === danceId);
-    if (danceObj && !customInput.value.trim()) {
-      customInput.value = danceObj.name;
-    }
-  }
-});
 
 function openRentalModal(rentalId) {
   editingRentalId = rentalId || null;
@@ -1442,16 +1420,18 @@ function openRentalModal(rentalId) {
   document.getElementById('rental-client').value = rental ? rental.client : '';
   document.getElementById('rental-contact').value = rental ? (rental.contact || '') : '';
   document.getElementById('rental-date-out').value = rental ? (rental.dateOut || '') : new Date().toISOString().slice(0, 10);
-  document.getElementById('rental-time-out').value = rental ? (rental.timeOut || '09:00') : '09:00';
   document.getElementById('rental-date-return').value = rental ? (rental.dateReturn || '') : '';
-  document.getElementById('rental-time-return').value = rental ? (rental.timeReturn || '18:00') : '18:00';
   
   const alertAdvanceSelect = document.getElementById('rental-alert-advance');
   if (alertAdvanceSelect) {
-    alertAdvanceSelect.value = rental && rental.alertAdvance ? rental.alertAdvance : '2h';
+    alertAdvanceSelect.value = rental && rental.alertAdvance ? rental.alertAdvance : 'today';
   }
 
-  document.getElementById('rental-dance-custom').value = rental ? (rental.danceCustom || rental.danceName || '') : '';
+  const danceInput = document.getElementById('rental-dance-input');
+  if (danceInput) {
+    danceInput.value = rental ? (rental.danceCustom || rental.danceName || '') : '';
+  }
+
   document.getElementById('rental-notes').value = rental ? (rental.notes || '') : '';
   document.getElementById('btn-delete-rental').classList.toggle('hidden', !rental);
 
@@ -1463,16 +1443,13 @@ function openRentalModal(rentalId) {
   editingRentalCustomFemaleSizes = [];
 
   // Ocultar cuadro de pegar si estaba abierto
-  document.getElementById('rental-paste-box').classList.add('hidden');
-  document.getElementById('rental-paste-text').value = '';
+  const pasteBox = document.getElementById('rental-paste-box');
+  if (pasteBox) pasteBox.classList.add('hidden');
+  const pasteText = document.getElementById('rental-paste-text');
+  if (pasteText) pasteText.value = '';
 
-  // Cerrar lista de detalles
-  const details = document.getElementById('details-students-list');
-  if (details) details.open = editingRentalStudents.length > 0;
-
-  fillRentalDanceSelect(rental ? rental.danceId : '');
+  fillRentalDanceDatalist();
   renderRentalSizesGrids();
-  renderStudentsEditor();
 
   openModal('modal-rental');
 }
@@ -1482,20 +1459,23 @@ document.getElementById('btn-add-rental').addEventListener('click', () => openRe
 document.getElementById('btn-save-rental').addEventListener('click', () => {
   const client = document.getElementById('rental-client').value.trim();
   if (!client) {
-    showToast('Escribe el nombre del cliente o colegio');
+    showToast('Escribe el nombre del cliente, colegio o institución');
     return;
   }
   const contact = document.getElementById('rental-contact').value.trim();
   const dateOut = document.getElementById('rental-date-out').value;
-  const timeOut = document.getElementById('rental-time-out').value || '09:00';
   const dateReturn = document.getElementById('rental-date-return').value;
-  const timeReturn = document.getElementById('rental-time-return').value || '18:00';
   const alertAdvanceSelect = document.getElementById('rental-alert-advance');
-  const alertAdvance = alertAdvanceSelect ? alertAdvanceSelect.value : '2h';
-  const danceId = document.getElementById('rental-dance-select').value;
-  const danceObj = state.dances.find((d) => d.id === danceId);
-  const danceName = danceObj ? danceObj.name : '';
-  const danceCustom = document.getElementById('rental-dance-custom').value.trim();
+  const alertAdvance = alertAdvanceSelect ? alertAdvanceSelect.value : 'today';
+  
+  const danceInput = document.getElementById('rental-dance-input');
+  const danceEntered = danceInput ? danceInput.value.trim() : '';
+
+  // Buscar si coincide con alguna danza registrada
+  const matchedDance = state.dances.find((d) => d.name.trim().toLowerCase() === danceEntered.toLowerCase());
+  const danceId = matchedDance ? matchedDance.id : '';
+  const danceName = matchedDance ? matchedDance.name : danceEntered;
+  const danceCustom = matchedDance ? '' : danceEntered;
   const notes = document.getElementById('rental-notes').value.trim();
 
   // Limpiar conteo de tallas de varones y mujeres (solo guardar > 0)
@@ -1520,8 +1500,8 @@ document.getElementById('btn-save-rental').addEventListener('click', () => {
   const totalCombined = Object.values(combinedSizes).reduce((acc, val) => acc + val, 0);
 
   let cleanItems = [];
-  if (danceObj && Array.isArray(danceObj.requirements) && danceObj.requirements.length > 0) {
-    cleanItems = danceObj.requirements.map((prodId) => {
+  if (matchedDance && Array.isArray(matchedDance.requirements) && matchedDance.requirements.length > 0) {
+    cleanItems = matchedDance.requirements.map((prodId) => {
       const prod = state.products.find((p) => p.id === prodId);
       if (prod && prod.hasSizes === false) {
         return {
@@ -1544,9 +1524,7 @@ document.getElementById('btn-save-rental').addEventListener('click', () => {
     rental.client = client;
     rental.contact = contact;
     rental.dateOut = dateOut;
-    rental.timeOut = timeOut;
     rental.dateReturn = dateReturn;
-    rental.timeReturn = timeReturn;
     rental.alertAdvance = alertAdvance;
     rental.danceId = danceId;
     rental.danceName = danceName;
@@ -1563,9 +1541,7 @@ document.getElementById('btn-save-rental').addEventListener('click', () => {
       client,
       contact,
       dateOut,
-      timeOut,
       dateReturn,
-      timeReturn,
       alertAdvance,
       danceId,
       danceName,
@@ -1577,8 +1553,15 @@ document.getElementById('btn-save-rental').addEventListener('click', () => {
       students: [...editingRentalStudents],
       notes,
     });
-    showToast('Alquiler registrado con horario');
+    showToast('Alquiler registrado correctamente');
   }
+
+  saveState();
+  renderRentals();
+  renderAvailabilityPanel();
+  checkAndTriggerNotifications();
+  closeModal('modal-rental');
+});
 
   saveState();
   renderRentals();
@@ -2421,13 +2404,15 @@ function openAdminAuthModal() {
     if (loggedInView) loggedInView.classList.remove('hidden');
     if (loginFormView) loginFormView.classList.add('hidden');
     if (modalFoot) modalFoot.classList.add('hidden');
-    if (currentEmailDisplay) currentEmailDisplay.textContent = `Correo: ${currentAdminEmail || DEFAULT_ADMIN_EMAIL}`;
+    if (currentEmailDisplay) currentEmailDisplay.textContent = `Correo: ${currentAdminEmail || ''}`;
   } else {
     if (loggedInView) loggedInView.classList.add('hidden');
     if (loginFormView) loginFormView.classList.remove('hidden');
     if (modalFoot) modalFoot.classList.remove('hidden');
     const input = document.getElementById('admin-email-input');
-    if (input) input.value = currentAdminEmail || DEFAULT_ADMIN_EMAIL;
+    const pinInput = document.getElementById('admin-pin-input');
+    if (input) input.value = '';
+    if (pinInput) pinInput.value = '';
   }
 
   openModal('modal-admin-login');
@@ -2436,9 +2421,11 @@ function openAdminAuthModal() {
 const btnSubmitAdminLogin = document.getElementById('btn-submit-admin-login');
 if (btnSubmitAdminLogin) {
   btnSubmitAdminLogin.addEventListener('click', () => {
-    const input = document.getElementById('admin-email-input');
+    const emailInput = document.getElementById('admin-email-input');
+    const pinInput = document.getElementById('admin-pin-input');
     const errorEl = document.getElementById('admin-login-error');
-    const email = input ? input.value.trim().toLowerCase() : '';
+    const email = emailInput ? emailInput.value.trim().toLowerCase() : '';
+    const pin = pinInput ? pinInput.value.trim() : '';
 
     if (!email) {
       if (errorEl) {
@@ -2448,8 +2435,10 @@ if (btnSubmitAdminLogin) {
       return;
     }
 
-    // Comprobar correo autorizado
-    if (email === DEFAULT_ADMIN_EMAIL.toLowerCase() || email.endsWith('@gmail.com') || email === currentAdminEmail) {
+    const isEmailValid = AUTHORIZED_ADMIN_EMAILS.includes(email);
+    const isPinValid = ADMIN_PINS.includes(pin);
+
+    if (isEmailValid && isPinValid) {
       currentAdminEmail = email;
       localStorage.setItem(AUTH_STORAGE_KEY, email);
       isAdmin = true;
@@ -2460,7 +2449,11 @@ if (btnSubmitAdminLogin) {
       showToast('¡Sesión iniciada como Administrador!');
     } else {
       if (errorEl) {
-        errorEl.textContent = `El correo "${email}" no tiene permisos de administrador. Solo el correo institucional del cliente puede editar.`;
+        if (!isEmailValid) {
+          errorEl.textContent = `El correo "${email}" no está registrado como administrador.`;
+        } else {
+          errorEl.textContent = 'PIN o clave de seguridad incorrecta.';
+        }
         errorEl.classList.remove('hidden');
       }
     }
@@ -2470,12 +2463,14 @@ if (btnSubmitAdminLogin) {
 const btnLogoutAdmin = document.getElementById('btn-logout-admin');
 if (btnLogoutAdmin) {
   btnLogoutAdmin.addEventListener('click', () => {
+    currentAdminEmail = null;
+    localStorage.removeItem(AUTH_STORAGE_KEY);
     isAdmin = false;
     isCatalogMode = true;
     closeModal('modal-admin-login');
     updateAuthUI();
     renderAll();
-    showToast('Sesión cerrada. Mostrando modo catálogo.');
+    showToast('Sesión de administrador cerrada.');
   });
 }
 
@@ -2532,130 +2527,99 @@ function calculateNotifications() {
 
     const danceTitle = r.danceCustom || r.danceName || 'Vestuario general';
     const clientName = r.client || 'Cliente';
-    const timeOut = r.timeOut || '09:00';
-    const timeReturn = r.timeReturn || '18:00';
 
     // 1. Alertas de Devolución
     if (r.dateReturn) {
-      const returnDateTime = new Date(`${r.dateReturn}T${timeReturn}:00`);
-      if (!isNaN(returnDateTime.getTime())) {
-        if (returnDateTime < now) {
-          const diffHours = Math.max(1, Math.round((now - returnDateTime) / (1000 * 60 * 60)));
-          const timeAgoText = diffHours >= 24 ? `${Math.floor(diffHours / 24)} días` : `${diffHours} horas`;
-
-          alerts.push({
-            id: `overdue-${r.id}`,
-            rentalId: r.id,
-            type: 'overdue',
-            priority: 'urgent',
-            category: 'overdue',
-            title: `Devolución Atrasada · ${clientName}`,
-            dance: danceTitle,
-            client: clientName,
-            timeLabel: `Venció el ${formatDateFriendly(r.dateReturn)} a las ${formatTime12h(timeReturn)}`,
-            desc: `Los trajes de ${danceTitle} debían devolverse hace ${timeAgoText}. Comunícate con el cliente o registra la devolución.`,
-            badgeText: '⚠️ Atrasado',
-            badgeClass: 'danger',
-            dateSort: returnDateTime.getTime(),
-            actionType: 'return'
-          });
-        } else if (r.dateReturn === todayStr) {
-          alerts.push({
-            id: `today-return-${r.id}`,
-            rentalId: r.id,
-            type: 'today_return',
-            priority: 'today',
-            category: 'today',
-            title: `Devolución Programada para HOY · ${clientName}`,
-            dance: danceTitle,
-            client: clientName,
-            timeLabel: `Hoy a las ${formatTime12h(timeReturn)}`,
-            desc: `Recepción y chequeo de vestuarios de ${danceTitle} entregados a ${clientName}.`,
-            badgeText: '🔄 Hoy Devolución',
-            badgeClass: 'warning',
-            dateSort: returnDateTime.getTime(),
-            actionType: 'return'
-          });
-        } else if (r.dateReturn === tomorrowStr) {
-          alerts.push({
-            id: `tomorrow-return-${r.id}`,
-            rentalId: r.id,
-            type: 'tomorrow_return',
-            priority: 'upcoming',
-            category: 'upcoming',
-            title: `Devolución MAÑANA · ${clientName}`,
-            dance: danceTitle,
-            client: clientName,
-            timeLabel: `Mañana ${formatDateFriendly(r.dateReturn)} a las ${formatTime12h(timeReturn)}`,
-            desc: `Recordatorio previo: mañana vence el alquiler de vestuarios de ${danceTitle}.`,
-            badgeText: '📅 Mañana',
-            badgeClass: 'info',
-            dateSort: returnDateTime.getTime(),
-            actionType: 'view'
-          });
-        } else {
-          const diffDays = Math.round((returnDateTime - now) / (1000 * 60 * 60 * 24));
-          if (diffDays >= 2 && diffDays <= 7) {
-            alerts.push({
-              id: `upcoming-return-${r.id}`,
-              rentalId: r.id,
-              type: 'upcoming_return',
-              priority: 'upcoming',
-              category: 'upcoming',
-              title: `Próxima Devolución (${diffDays} días) · ${clientName}`,
-              dance: danceTitle,
-              client: clientName,
-              timeLabel: `${formatDateFriendly(r.dateReturn)} a las ${formatTime12h(timeReturn)}`,
-              desc: `En ${diffDays} días está programada la devolución de los vestuarios de ${danceTitle}.`,
-              badgeText: `En ${diffDays} días`,
-              badgeClass: 'info',
-              dateSort: returnDateTime.getTime(),
-              actionType: 'view'
-            });
-          }
-        }
+      if (r.dateReturn < todayStr) {
+        alerts.push({
+          id: `overdue-${r.id}`,
+          rentalId: r.id,
+          type: 'overdue',
+          priority: 'urgent',
+          category: 'overdue',
+          title: `Devolución Atrasada · ${clientName}`,
+          dance: danceTitle,
+          client: clientName,
+          timeLabel: `Venció el ${formatDateFriendly(r.dateReturn)}`,
+          desc: `Los trajes de ${danceTitle} debían devolverse el ${formatDateFriendly(r.dateReturn)}. Comunícate con el cliente o registra la devolución.`,
+          badgeText: '⚠️ Atrasado',
+          badgeClass: 'danger',
+          dateSort: new Date(`${r.dateReturn}T00:00:00`).getTime(),
+          actionType: 'return'
+        });
+      } else if (r.dateReturn === todayStr) {
+        alerts.push({
+          id: `today-return-${r.id}`,
+          rentalId: r.id,
+          type: 'today_return',
+          priority: 'today',
+          category: 'today',
+          title: `Devolución Programada para HOY · ${clientName}`,
+          dance: danceTitle,
+          client: clientName,
+          timeLabel: `Hoy ${formatDateFriendly(r.dateReturn)}`,
+          desc: `Recepción y chequeo de vestuarios de ${danceTitle} entregados a ${clientName}.`,
+          badgeText: '🔄 Hoy Devolución',
+          badgeClass: 'warning',
+          dateSort: new Date(`${r.dateReturn}T00:00:00`).getTime(),
+          actionType: 'return'
+        });
+      } else if (r.dateReturn === tomorrowStr) {
+        alerts.push({
+          id: `tomorrow-return-${r.id}`,
+          rentalId: r.id,
+          type: 'tomorrow_return',
+          priority: 'upcoming',
+          category: 'upcoming',
+          title: `Devolución MAÑANA · ${clientName}`,
+          dance: danceTitle,
+          client: clientName,
+          timeLabel: `Mañana ${formatDateFriendly(r.dateReturn)}`,
+          desc: `Recordatorio: mañana vence el alquiler de vestuarios de ${danceTitle}.`,
+          badgeText: '📅 Mañana',
+          badgeClass: 'info',
+          dateSort: new Date(`${r.dateReturn}T00:00:00`).getTime(),
+          actionType: 'view'
+        });
       }
     }
 
     // 2. Alertas de Entrega / Salida
     if (r.dateOut) {
-      const outDateTime = new Date(`${r.dateOut}T${timeOut}:00`);
-      if (!isNaN(outDateTime.getTime())) {
-        if (r.dateOut === todayStr) {
-          alerts.push({
-            id: `today-out-${r.id}`,
-            rentalId: r.id,
-            type: 'today_out',
-            priority: 'today',
-            category: 'today',
-            title: `Entrega Programada para HOY · ${clientName}`,
-            dance: danceTitle,
-            client: clientName,
-            timeLabel: `Hoy a las ${formatTime12h(timeOut)}`,
-            desc: `Alistar y entregar los trajes de ${danceTitle} a ${clientName} a las ${formatTime12h(timeOut)}.`,
-            badgeText: '📦 Hoy Entrega',
-            badgeClass: 'info',
-            dateSort: outDateTime.getTime(),
-            actionType: 'view'
-          });
-        } else if (r.dateOut === tomorrowStr) {
-          alerts.push({
-            id: `tomorrow-out-${r.id}`,
-            rentalId: r.id,
-            type: 'tomorrow_out',
-            priority: 'upcoming',
-            category: 'upcoming',
-            title: `Entrega MAÑANA · ${clientName}`,
-            dance: danceTitle,
-            client: clientName,
-            timeLabel: `Mañana ${formatDateFriendly(r.dateOut)} a las ${formatTime12h(timeOut)}`,
-            desc: `Preparar y embalar el vestuario de ${danceTitle} para entrega a ${clientName}.`,
-            badgeText: '📦 Mañana Salida',
-            badgeClass: 'info',
-            dateSort: outDateTime.getTime(),
-            actionType: 'view'
-          });
-        }
+      if (r.dateOut === todayStr) {
+        alerts.push({
+          id: `today-out-${r.id}`,
+          rentalId: r.id,
+          type: 'today_out',
+          priority: 'today',
+          category: 'today',
+          title: `Entrega Programada para HOY · ${clientName}`,
+          dance: danceTitle,
+          client: clientName,
+          timeLabel: `Hoy ${formatDateFriendly(r.dateOut)}`,
+          desc: `Alistar y entregar los trajes de ${danceTitle} a ${clientName}.`,
+          badgeText: '📦 Hoy Entrega',
+          badgeClass: 'info',
+          dateSort: new Date(`${r.dateOut}T00:00:00`).getTime(),
+          actionType: 'view'
+        });
+      } else if (r.dateOut === tomorrowStr) {
+        alerts.push({
+          id: `tomorrow-out-${r.id}`,
+          rentalId: r.id,
+          type: 'tomorrow_out',
+          priority: 'upcoming',
+          category: 'upcoming',
+          title: `Entrega MAÑANA · ${clientName}`,
+          dance: danceTitle,
+          client: clientName,
+          timeLabel: `Mañana ${formatDateFriendly(r.dateOut)}`,
+          desc: `Preparar y embalar el vestuario de ${danceTitle} para entrega a ${clientName}.`,
+          badgeText: '📦 Mañana Salida',
+          badgeClass: 'info',
+          dateSort: new Date(`${r.dateOut}T00:00:00`).getTime(),
+          actionType: 'view'
+        });
       }
     }
   });
