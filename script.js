@@ -497,39 +497,6 @@ function renderProducts() {
   }
 
   list.forEach((product) => {
-    let middleContentHtml = '';
-
-    if (product.hasSizes === false) {
-      const total = Number(product.totalDirectQty || 0);
-      middleContentHtml = `
-        <div class="total-count-row">
-          <span>Total en almacén</span>
-          <span class="total-count-val">${total} und.</span>
-        </div>
-      `;
-    } else {
-      const sizeEntries = sortedSizeEntries(product.sizes);
-      let total = 0;
-      sizeEntries.forEach(([, q]) => (total += Number(q || 0)));
-
-      const sizesHtml = sizeEntries.length
-        ? sizeEntries.map(([label, qty]) => `
-            <div class="size-item" title="Talla ${escapeHtml(label)}: ${qty} unidad(es)">
-              <span class="size-item-lbl">Talla ${escapeHtml(label)}</span>
-              <span class="size-item-qty">${qty}</span>
-            </div>
-          `).join('')
-        : `<p style="color:var(--ink-faint); font-size:12.5px; margin:0; grid-column:1/-1;">Sin tallas registradas</p>`;
-
-      middleContentHtml = `
-        <div class="sizes-row">${sizesHtml}</div>
-        <div class="total-count-row">
-          <span>Total en almacén</span>
-          <span class="total-count-val">${total} und.</span>
-        </div>
-      `;
-    }
-
     const photoHtml = product.photo
       ? `<img src="${product.photo}" alt="Foto de ${escapeHtml(product.name)}" loading="lazy">`
       : `<span class="placeholder-icon">${ICON_GARMENT}</span>`;
@@ -537,18 +504,21 @@ function renderProducts() {
     const card = document.createElement('article');
     card.className = 'card product-card';
     card.innerHTML = `
-      <div class="card-photo" style="cursor:pointer;" data-edit-product="${product.id}">
+      <div class="card-photo" style="cursor:pointer;" data-view-product="${product.id}">
         ${photoHtml}
       </div>
       <div class="card-body">
         <div class="card-header">
-          <h3 style="cursor:pointer;" data-edit-product="${product.id}">${escapeHtml(product.name)}</h3>
+          <h3 style="cursor:pointer;" data-view-product="${product.id}" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</h3>
         </div>
-        ${middleContentHtml}
-        <div class="card-actions">
-          <button type="button" class="btn-secondary" data-edit-product="${product.id}" title="Editar prenda" aria-label="Editar prenda" style="width:100%; display:flex; align-items:center; justify-content:center; gap:6px;">
+        <div class="card-actions product-card-actions">
+          <button type="button" class="btn-secondary" data-edit-product="${product.id}" title="Editar prenda" aria-label="Editar">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-            <span class="btn-label">Editar prenda</span>
+            <span class="btn-label">Editar</span>
+          </button>
+          <button type="button" class="btn-ghost btn-view-eye" data-view-product="${product.id}" title="Ver tallas y detalles" aria-label="Ver tallas">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            <span class="btn-label">Tallas</span>
           </button>
         </div>
       </div>
@@ -557,7 +527,17 @@ function renderProducts() {
   });
 
   grid.querySelectorAll('[data-edit-product]').forEach((btn) => {
-    btn.addEventListener('click', () => openProductModal(btn.dataset.editProduct));
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openProductModal(btn.dataset.editProduct);
+    });
+  });
+
+  grid.querySelectorAll('[data-view-product]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openProductViewModal(btn.dataset.viewProduct);
+    });
   });
 }
 
@@ -600,47 +580,35 @@ function renderDances() {
       ? `<img src="${dance.photo}" alt="Foto de ${escapeHtml(dance.name)}" loading="lazy">`
       : `<span class="placeholder-icon">${ICON_DANCE}</span>`;
 
-    const totalGarments = (dance.requirements || []).length;
-    const reqsHtml = (dance.requirements || []).map((productId) => {
-      const product = state.products.find((p) => p.id === productId);
-      const name = product ? product.name : '(prenda eliminada)';
-      return `
-        <li class="dance-garment-item">
-          <span class="dance-garment-bullet">•</span>
-          <span>${escapeHtml(name)}</span>
-        </li>
-      `;
-    }).join('') || '<li class="dance-garment-empty">Sin prendas asignadas</li>';
-
     let cardActionsHtml = '';
     const whatsappText = encodeURIComponent(`Hola YAWAR INKA, deseo consultar por el vestuario de la danza ${dance.name}`);
     const whatsappUrl = `https://wa.me/${WHATSAPP_PHONE}?text=${whatsappText}`;
 
     if (!isAdmin || isCatalogMode) {
-      // Modo catálogo para clientes: Solo ver detalle y consultar por WhatsApp
+      // Modo catálogo para clientes: Ver traje completo y Consultar por WhatsApp
       cardActionsHtml = `
         <div class="catalog-card-actions">
-          <button type="button" class="btn-catalog-view-detail" data-view-dance="${dance.id}" title="Ver vestuario y piezas del traje" aria-label="Ver vestuario">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            <span class="btn-label">Ver vestuario</span>
+          <button type="button" class="btn-catalog-view-detail" data-view-dance="${dance.id}" title="Ver vestuario y piezas del traje" aria-label="Ver traje">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            <span class="btn-label">Traje</span>
           </button>
           <a href="${whatsappUrl}" target="_blank" rel="noopener noreferrer" class="btn-catalog-consult" title="Consultar por WhatsApp" aria-label="Consultar por WhatsApp">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.699c.963.54 1.777.838 2.796.838 3.185 0 5.77-2.587 5.77-5.769.001-3.182-2.583-5.771-5.77-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.275.072.376-.044c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.073.043.419-.101.824z"/></svg>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.699c.963.54 1.777.838 2.796.838 3.185 0 5.77-2.587 5.77-5.769.001-3.182-2.583-5.771-5.77-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.275.072.376-.044c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.073.043.419-.101.824z"/></svg>
             <span class="btn-label">Consultar</span>
           </a>
         </div>
       `;
     } else {
-      // Modo administrador: Permite editar o previsualizar
+      // Modo administrador: Editar o Ver traje
       cardActionsHtml = `
         <div class="dance-card-actions">
           <button type="button" class="btn-secondary" data-edit-dance="${dance.id}" title="Editar danza" aria-label="Editar danza">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
             <span class="btn-label">Editar</span>
           </button>
-          <button type="button" class="btn-ghost" data-view-dance="${dance.id}" title="Ver vestuario completo" aria-label="Ver vestuario completo">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            <span class="btn-label">Ver</span>
+          <button type="button" class="btn-ghost" data-view-dance="${dance.id}" title="Ver vestuario" aria-label="Ver traje">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            <span class="btn-label">Traje</span>
           </button>
         </div>
       `;
@@ -652,13 +620,8 @@ function renderDances() {
       <div class="card-photo" style="cursor:pointer;" data-view-dance="${dance.id}">${photoHtml}</div>
       <div class="card-body">
         <div class="card-header">
-          <h3>${escapeHtml(dance.name)}</h3>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px;">
-            <span style="font-size:11.5px; color:var(--ink-soft); font-weight:600;">Prendas del traje:</span>
-            <span class="badge" style="font-size:11px; white-space:nowrap;">${totalGarments} ${totalGarments === 1 ? 'pieza' : 'piezas'}</span>
-          </div>
+          <h3 style="cursor:pointer;" data-view-dance="${dance.id}" title="${escapeHtml(dance.name)}">${escapeHtml(dance.name)}</h3>
         </div>
-        <ul class="dance-garments-list">${reqsHtml}</ul>
         ${cardActionsHtml}
       </div>
     `;
@@ -1690,56 +1653,13 @@ if (typeWithSizesEl) typeWithSizesEl.addEventListener('change', updateProductMod
 const typeNoSizesEl = document.getElementById('type-no-sizes');
 if (typeNoSizesEl) typeNoSizesEl.addEventListener('change', updateProductModalSizeType);
 
-function renderQuickSizePresets() {
-  const container = document.getElementById('quick-size-presets');
-  if (!container) return;
-  const used = Object.keys(editingSizes);
-  
-  // Lista de tallas rápidas predeterminadas
-  const presets = [...SIZE_PRESETS, 'Estándar'];
-  
-  container.innerHTML = presets.map((s) => {
-    const isAdded = used.includes(s);
-    return `
-      <button type="button" class="size-preset-pill ${isAdded ? 'active' : ''}" data-preset-size="${escapeHtml(s)}" title="${isAdded ? 'Talla ya agregada' : 'Clic para agregar esta talla automáticamente'}">
-        ${isAdded ? '✓ ' : '+ '}Talla ${escapeHtml(s)}
-      </button>
-    `;
-  }).join('');
-
-  container.querySelectorAll('[data-preset-size]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const s = btn.dataset.presetSize;
-      const qtyInput = document.getElementById('new-size-qty');
-      const qtyToAdd = Math.max(1, Number(qtyInput ? qtyInput.value : 1) || 1);
-
-      if (editingSizes[s] === undefined) {
-        editingSizes[s] = qtyToAdd;
-        showToast(`Talla ${s} agregada (${qtyToAdd} und.)`);
-      } else {
-        // Si ya está, enfocar o incrementar
-        showToast(`Talla ${s} seleccionada`);
-      }
-      if (qtyInput) qtyInput.value = 1;
-      renderSizesEditor();
-      
-      // Enfocar input de esa talla para que el usuario pueda tipear otra cantidad de inmediato
-      const row = document.querySelector(`.size-edit-row[data-size="${CSS.escape(s)}"] input[data-qty-input]`);
-      if (row) {
-        row.focus();
-        row.select();
-      }
-    });
-  });
-}
-
 function fillSizeSelectOptions() {
   const select = document.getElementById('new-size-select');
   if (!select) return;
-  const used = Object.keys(editingSizes);
-  select.innerHTML = '<option value="">Elegir otra talla...</option>' +
-    SIZE_PRESETS.filter((s) => !used.includes(s)).map((s) => `<option value="${s}">Talla ${s}</option>`).join('') +
-    '<option value="__custom__">Otra talla personalizada...</option>';
+  const presets = ['4', '6', '8', '10', '12', '14', '16', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'Estándar'];
+  select.innerHTML = '<option value="">+ Seleccionar talla para agregar...</option>' +
+    presets.map((s) => `<option value="${s}">Talla ${s}</option>`).join('') +
+    '<option value="__custom__">Escribir otra talla...</option>';
 }
 
 function renderSizesEditor() {
@@ -1756,17 +1676,18 @@ function renderSizesEditor() {
   }
 
   if (entries.length === 0) {
-    container.innerHTML = `<p style="color:var(--ink-faint); font-size:13px; margin:0; padding:4px 0;">No hay tallas agregadas. Toca una talla arriba para agregarla automáticamente.</p>`;
+    container.innerHTML = `<p style="color:var(--ink-faint); font-size:13px; margin:0; padding:6px 0;">No hay tallas agregadas. Selecciona una talla en el menú superior para agregarla automáticamente.</p>`;
   } else {
     container.innerHTML = entries.map(([label, qty]) => `
       <div class="size-edit-row" data-size="${escapeHtml(label)}">
-        <span class="size-label-edit">Talla ${escapeHtml(label)}</span>
-        <div class="stepper">
-          <button type="button" class="icon-btn" data-step="-1" title="Restar 1">−</button>
-          <input type="number" min="0" value="${qty}" data-qty-input title="Cantidad">
-          <button type="button" class="icon-btn" data-step="1" title="Sumar 1">+</button>
+        <span class="size-edit-label">Talla ${escapeHtml(label)}:</span>
+        <div class="size-edit-stepper">
+          <button type="button" class="stepper-sub-btn" data-step="-1" title="Restar 1">−</button>
+          <input type="number" min="0" value="${qty}" data-qty-input title="Cantidad de unidades en talla ${escapeHtml(label)}">
+          <button type="button" class="stepper-add-btn" data-step="1" title="Sumar 1">+</button>
         </div>
-        <button type="button" class="icon-btn remove-x" data-remove-size title="Eliminar talla">✕</button>
+        <span class="size-edit-unit-lbl">und.</span>
+        <button type="button" class="size-edit-remove-btn" data-remove-size title="Eliminar talla ${escapeHtml(label)}">✕</button>
       </div>
     `).join('');
   }
@@ -1800,65 +1721,54 @@ function renderSizesEditor() {
       removeBtn.addEventListener('click', () => {
         delete editingSizes[label];
         renderSizesEditor();
-        fillSizeSelectOptions();
-        renderQuickSizePresets();
       });
     }
   });
-
-  fillSizeSelectOptions();
-  renderQuickSizePresets();
 }
 
-function handleAddSizeFromInputs(autoFocusNext = false) {
-  const select = document.getElementById('new-size-select');
-  const customInput = document.getElementById('new-size-custom');
-  const qtyInput = document.getElementById('new-size-qty');
-  if (!select) return;
-
-  let label = select.value;
-  if (label === '__custom__' && customInput) label = customInput.value.trim().toUpperCase();
+function handleAddSizeDirectly(sizeLabel) {
+  if (!sizeLabel) return;
+  const label = sizeLabel.trim();
   if (!label) return;
 
-  const qty = Math.max(1, Number(qtyInput ? qtyInput.value : 1) || 1);
-
   if (editingSizes[label] !== undefined) {
-    editingSizes[label] = Number(editingSizes[label] || 0) + qty;
-    showToast(`Talla ${label} actualizada (+${qty})`);
+    editingSizes[label] = Number(editingSizes[label] || 0) + 1;
+    showToast(`Talla ${label} actualizada`);
   } else {
-    editingSizes[label] = qty;
-    showToast(`Talla ${label} agregada (${qty} und.)`);
+    editingSizes[label] = 1;
+    showToast(`Talla ${label} agregada`);
   }
 
-  select.value = '';
+  const select = document.getElementById('new-size-select');
+  if (select) select.value = '';
+
+  const customInput = document.getElementById('new-size-custom');
   if (customInput) {
     customInput.value = '';
     customInput.classList.add('hidden');
   }
-  if (qtyInput) qtyInput.value = 1;
+
   renderSizesEditor();
 
-  if (autoFocusNext) {
-    const row = document.querySelector(`.size-edit-row[data-size="${CSS.escape(label)}"] input[data-qty-input]`);
-    if (row) {
-      row.focus();
-      row.select();
-    }
+  const row = document.querySelector(`.size-edit-row[data-size="${CSS.escape(label)}"] input[data-qty-input]`);
+  if (row) {
+    row.focus();
+    row.select();
   }
 }
 
 const newSizeSelectEl = document.getElementById('new-size-select');
 if (newSizeSelectEl) {
   newSizeSelectEl.addEventListener('change', (e) => {
+    const val = e.target.value;
     const customInput = document.getElementById('new-size-custom');
-    if (e.target.value === '__custom__') {
+    if (val === '__custom__') {
       if (customInput) {
         customInput.classList.remove('hidden');
         customInput.focus();
       }
-    } else if (e.target.value !== '') {
-      // Auto-agregar de inmediato al seleccionar la talla
-      handleAddSizeFromInputs(true);
+    } else if (val !== '') {
+      handleAddSizeDirectly(val);
     }
   });
 }
@@ -1868,25 +1778,100 @@ if (newSizeCustomEl) {
   newSizeCustomEl.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleAddSizeFromInputs(true);
+      const val = newSizeCustomEl.value.trim().toUpperCase();
+      if (val) handleAddSizeDirectly(val);
     }
   });
 }
 
-const newSizeQtyEl = document.getElementById('new-size-qty');
-if (newSizeQtyEl) {
-  newSizeQtyEl.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAddSizeFromInputs(true);
+/* ========================= MODAL: VER DETALLE / TALLAS DE PRENDA ========================= */
+
+let viewingProductId = null;
+
+function openProductViewModal(productId) {
+  viewingProductId = productId;
+  const product = state.products.find((p) => p.id === productId);
+  if (!product) return;
+
+  const titleEl = document.getElementById('modal-product-view-title');
+  const nameEl = document.getElementById('product-view-name');
+  const danceTagEl = document.getElementById('product-view-dance-tag');
+  const photoImg = document.getElementById('product-view-photo');
+  const photoPlaceholder = document.getElementById('product-view-placeholder');
+  const totalQtyEl = document.getElementById('product-view-total-qty');
+  const sizesGridEl = document.getElementById('product-view-sizes-grid');
+
+  if (titleEl) titleEl.textContent = product.name;
+  if (nameEl) nameEl.textContent = product.name;
+
+  if (danceTagEl) {
+    if (product.danceTag) {
+      danceTagEl.textContent = product.danceTag;
+      danceTagEl.classList.remove('hidden');
+    } else {
+      danceTagEl.classList.add('hidden');
     }
-  });
+  }
+
+  if (photoImg && photoPlaceholder) {
+    if (product.photo) {
+      photoImg.src = product.photo;
+      photoImg.alt = `Foto de ${product.name}`;
+      photoImg.classList.remove('hidden');
+      photoPlaceholder.classList.add('hidden');
+    } else {
+      photoImg.classList.add('hidden');
+      photoPlaceholder.classList.remove('hidden');
+    }
+  }
+
+  if (product.hasSizes === false) {
+    const total = Number(product.totalDirectQty || 0);
+    if (totalQtyEl) totalQtyEl.textContent = `${total} ${total === 1 ? 'und.' : 'unidades'}`;
+    if (sizesGridEl) {
+      sizesGridEl.innerHTML = `
+        <div class="size-bars-list">
+          <div class="size-bar-row">
+            <span class="size-bar-label">Talla Única</span>
+            <span class="size-bar-qty"><strong>${total}</strong> ${total === 1 ? 'und.' : 'unidades'}</span>
+          </div>
+        </div>
+      `;
+    }
+  } else {
+    const sizeEntries = sortedSizeEntries(product.sizes);
+    let total = 0;
+    sizeEntries.forEach(([, q]) => (total += Number(q || 0)));
+    if (totalQtyEl) totalQtyEl.textContent = `${total} ${total === 1 ? 'und.' : 'unidades'}`;
+
+    if (sizesGridEl) {
+      if (sizeEntries.length === 0) {
+        sizesGridEl.innerHTML = `<p style="color:var(--ink-faint); font-size:13px; margin:0;">Sin tallas registradas en esta prenda.</p>`;
+      } else {
+        sizesGridEl.innerHTML = `
+          <div class="size-bars-list">
+            ${sizeEntries.map(([label, qty]) => `
+              <div class="size-bar-row">
+                <span class="size-bar-label">Talla ${escapeHtml(label)}</span>
+                <span class="size-bar-qty"><strong>${qty}</strong> ${qty === 1 ? 'und.' : 'unds.'}</span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+    }
+  }
+
+  openModal('modal-product-view');
 }
 
-const btnAddSizeEl = document.getElementById('btn-add-size');
-if (btnAddSizeEl) {
-  btnAddSizeEl.addEventListener('click', () => {
-    handleAddSizeFromInputs(false);
+const btnProductViewEdit = document.getElementById('btn-product-view-edit');
+if (btnProductViewEdit) {
+  btnProductViewEdit.addEventListener('click', () => {
+    closeModal('modal-product-view');
+    if (viewingProductId) {
+      openProductModal(viewingProductId);
+    }
   });
 }
 
@@ -1910,10 +1895,14 @@ function openProductModal(productId) {
 
   setProductPhoto(product ? product.photo : null);
 
-  document.getElementById('new-size-select').value = '';
-  document.getElementById('new-size-custom').value = '';
-  document.getElementById('new-size-custom').classList.add('hidden');
-  document.getElementById('new-size-qty').value = 1;
+  fillSizeSelectOptions();
+  const select = document.getElementById('new-size-select');
+  if (select) select.value = '';
+  const customInp = document.getElementById('new-size-custom');
+  if (customInp) {
+    customInp.value = '';
+    customInp.classList.add('hidden');
+  }
 
   renderSizesEditor();
   openModal('modal-product');
@@ -2376,16 +2365,22 @@ if (dancePhotoRem) dancePhotoRem.addEventListener('click', () => setDancePhoto(n
 
 /* ========================= MODAL: DANZA ========================= */
 
-function renderDanceGarmentsSlider() {
-  const slider = document.getElementById('dance-available-garments-slider');
+function renderDanceGarmentsChecklist() {
+  const container = document.getElementById('dance-garments-checklist');
   const searchInput = document.getElementById('dance-req-search-input');
   const clearBtn = document.getElementById('btn-clear-dance-req-search');
   const noProductsMsg = document.getElementById('req-no-products');
+  const badge = document.getElementById('dance-req-count-badge');
 
-  if (!slider) return;
+  if (!container) return;
 
   if (noProductsMsg) {
     noProductsMsg.classList.toggle('hidden', state.products.length !== 0);
+  }
+
+  if (badge) {
+    const count = editingRequirements.length;
+    badge.textContent = `${count} ${count === 1 ? 'prenda' : 'prendas'}`;
   }
 
   const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
@@ -2401,87 +2396,45 @@ function renderDanceGarmentsSlider() {
   });
 
   if (state.products.length === 0) {
-    slider.innerHTML = `<p style="grid-column:1/-1; color:var(--ink-faint); font-size:12.5px; margin:4px 0;">No hay prendas registradas todavía. Crea prendas en la pestaña Productos.</p>`;
+    container.innerHTML = `<p style="color:var(--ink-faint); font-size:13px; margin:4px 0;">No hay prendas registradas todavía. Ve a la pestaña «Productos» para registrar prendas.</p>`;
     return;
   }
 
   if (filteredProducts.length === 0) {
-    slider.innerHTML = `<p style="grid-column:1/-1; color:var(--ink-faint); font-size:12.5px; margin:6px 0; text-align:center;">No se encontró «${escapeHtml(query)}». Prueba con otro término.</p>`;
+    container.innerHTML = `<p style="color:var(--ink-faint); font-size:13px; margin:6px 0; text-align:center;">No se encontró «${escapeHtml(query)}». Prueba con otro nombre.</p>`;
     return;
   }
 
-  slider.innerHTML = filteredProducts.map((p) => {
+  container.innerHTML = filteredProducts.map((p) => {
     const isSelected = editingRequirements.includes(p.id);
     const thumbHtml = p.photo
-      ? `<img src="${p.photo}" alt="${escapeHtml(p.name)}" loading="lazy">`
-      : `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z"/></svg>`;
+      ? `<img src="${p.photo}" alt="${escapeHtml(p.name)}" class="dance-garment-check-thumb" loading="lazy">`
+      : `<div class="dance-garment-check-thumb-placeholder">${ICON_GARMENT}</div>`;
 
     return `
-      <div class="dance-garment-select-card ${isSelected ? 'selected' : ''}" data-product-id="${p.id}">
-        <div class="dance-garment-thumb">${thumbHtml}</div>
-        <span class="dance-garment-select-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</span>
-        <button type="button" class="dance-garment-select-btn">${isSelected ? '✓ En el traje' : '+ Agregar'}</button>
-      </div>
+      <label class="dance-garment-check-item ${isSelected ? 'selected' : ''}" data-product-id="${p.id}">
+        <input type="checkbox" ${isSelected ? 'checked' : ''} data-check-prod="${p.id}">
+        ${thumbHtml}
+        <span class="dance-garment-check-name">${escapeHtml(p.name)}</span>
+        <span class="dance-garment-check-status">${isSelected ? '✓ Incluida' : '+ Agregar'}</span>
+      </label>
     `;
   }).join('');
 
-  slider.querySelectorAll('.dance-garment-select-card').forEach((card) => {
-    card.addEventListener('click', () => {
-      const productId = card.dataset.productId;
+  container.querySelectorAll('input[data-check-prod]').forEach((checkbox) => {
+    checkbox.addEventListener('change', () => {
+      const productId = checkbox.dataset.checkProd;
       const product = state.products.find((p) => p.id === productId);
-      const isSelected = editingRequirements.includes(productId);
-
-      if (isSelected) {
+      if (checkbox.checked) {
+        if (!editingRequirements.includes(productId)) {
+          editingRequirements.push(productId);
+          showToast(`«${product ? product.name : 'Prenda'}» agregada al traje`);
+        }
+      } else {
         editingRequirements = editingRequirements.filter((id) => id !== productId);
         showToast(`«${product ? product.name : 'Prenda'}» quitada del traje`);
-      } else {
-        editingRequirements.push(productId);
-        showToast(`«${product ? product.name : 'Prenda'}» agregada al traje`);
       }
-
-      renderRequirementsEditor();
-      renderDanceGarmentsSlider();
-    });
-  });
-}
-
-function renderRequirementsEditor() {
-  const container = document.getElementById('dance-requirements-list');
-  const badge = document.getElementById('dance-req-count-badge');
-  if (!container) return;
-
-  if (badge) {
-    const count = editingRequirements.length;
-    badge.textContent = `${count} ${count === 1 ? 'prenda' : 'prendas'}`;
-  }
-
-  if (editingRequirements.length === 0) {
-    container.innerHTML = `<p style="color:var(--ink-faint); font-size:13px; margin:0; padding:6px 0;">No hay prendas incluidas todavía. Toca una prenda de la lista o búscala abajo para agregarla automáticamente.</p>`;
-    return;
-  }
-
-  container.innerHTML = editingRequirements.map((productId, idx) => {
-    const product = state.products.find((p) => p.id === productId);
-    const name = product ? product.name : '(prenda eliminada)';
-    const thumb = product && product.photo
-      ? `<img src="${product.photo}" alt="" style="width:24px; height:30px; object-fit:cover; border-radius:3px; border:1px solid #CBD5E1; margin-right:6px; flex-shrink:0;">`
-      : '';
-
-    return `
-      <div class="req-edit-row" data-idx="${idx}">
-        ${thumb}
-        <span class="req-edit-text"><b>${escapeHtml(name)}</b></span>
-        <button type="button" class="icon-btn remove-x" data-remove-req="${idx}" title="Quitar prenda del traje">✕</button>
-      </div>
-    `;
-  }).join('');
-
-  container.querySelectorAll('[data-remove-req]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const idx = Number(btn.dataset.removeReq);
-      editingRequirements.splice(idx, 1);
-      renderRequirementsEditor();
-      renderDanceGarmentsSlider();
+      renderDanceGarmentsChecklist();
     });
   });
 }
@@ -2489,7 +2442,7 @@ function renderRequirementsEditor() {
 const danceReqSearchInp = document.getElementById('dance-req-search-input');
 if (danceReqSearchInp) {
   danceReqSearchInp.addEventListener('input', () => {
-    renderDanceGarmentsSlider();
+    renderDanceGarmentsChecklist();
   });
 }
 
@@ -2500,7 +2453,7 @@ if (btnClearDanceReqSearch) {
       danceReqSearchInp.value = '';
       danceReqSearchInp.focus();
     }
-    renderDanceGarmentsSlider();
+    renderDanceGarmentsChecklist();
   });
 }
 
@@ -2511,6 +2464,8 @@ function openDanceModal(danceId) {
   document.getElementById('modal-dance-title').textContent = dance ? 'Editar danza' : 'Agregar danza';
   document.getElementById('dance-id').value = danceId || '';
   document.getElementById('dance-name').value = dance ? dance.name : '';
+  const descInp = document.getElementById('dance-description');
+  if (descInp) descInp.value = dance ? (dance.description || '') : '';
   document.getElementById('btn-delete-dance').classList.toggle('hidden', !dance);
 
   editingRequirements = dance ? [...(dance.requirements || [])] : [];
@@ -2519,8 +2474,7 @@ function openDanceModal(danceId) {
   const searchInp = document.getElementById('dance-req-search-input');
   if (searchInp) searchInp.value = '';
 
-  renderRequirementsEditor();
-  renderDanceGarmentsSlider();
+  renderDanceGarmentsChecklist();
   openModal('modal-dance');
 }
 
@@ -2536,9 +2490,13 @@ if (btnSaveDance) {
       showToast('Escribe el nombre de la danza');
       return;
     }
+    const descInp = document.getElementById('dance-description');
+    const description = descInp ? descInp.value.trim() : '';
+
     if (editingDanceId) {
       const dance = state.dances.find((d) => d.id === editingDanceId);
       dance.name = name;
+      dance.description = description;
       dance.requirements = [...editingRequirements];
       dance.photo = editingDancePhoto;
       showToast('Danza guardada');
@@ -2546,6 +2504,7 @@ if (btnSaveDance) {
       state.dances.push({
         id: uid('dance'),
         name,
+        description,
         requirements: [...editingRequirements],
         photo: editingDancePhoto,
       });
@@ -2718,6 +2677,7 @@ function openDanceDetailModal(danceId) {
   const nameEl = document.getElementById('dance-view-name');
   const photoImg = document.getElementById('dance-view-photo');
   const photoPlaceholder = document.getElementById('dance-view-placeholder');
+  const descEl = document.getElementById('dance-view-description');
   const garmentsListEl = document.getElementById('dance-view-garments');
   const whatsappBtn = document.getElementById('btn-dance-consult-whatsapp');
 
@@ -2736,18 +2696,27 @@ function openDanceDetailModal(danceId) {
     }
   }
 
+  if (descEl) {
+    if (dance.description && dance.description.trim()) {
+      descEl.textContent = dance.description;
+      descEl.classList.remove('hidden');
+    } else {
+      descEl.classList.add('hidden');
+    }
+  }
+
   if (garmentsListEl) {
     const reqs = dance.requirements || [];
     if (reqs.length === 0) {
-      garmentsListEl.innerHTML = '<li style="color:var(--ink-faint); font-weight:normal;">No se han especificado piezas para esta danza.</li>';
+      garmentsListEl.innerHTML = '<li style="color:var(--ink-faint); font-weight:normal; padding:8px 0;">No se han especificado prendas para esta danza.</li>';
     } else {
       garmentsListEl.innerHTML = reqs.map((prodId, idx) => {
         const prod = state.products.find((p) => p.id === prodId);
         const name = prod ? prod.name : '(Prenda tradicional)';
         return `
-          <li>
-            <span style="color:var(--accent); font-weight:700;">${idx + 1}.</span>
-            <span>${escapeHtml(name)}</span>
+          <li class="dance-garment-item">
+            <span class="dance-garment-num">${idx + 1}.</span>
+            <span class="dance-garment-name">${escapeHtml(name)}</span>
           </li>
         `;
       }).join('');
