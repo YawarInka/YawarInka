@@ -222,30 +222,36 @@
 
       <!-- SECCIÓN CON TALLAS -->
       <div id="section-with-sizes" class="field">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
           <span class="field-label">Tallas y cantidades en almacén</span>
           <span id="product-sizes-total-badge" class="gender-badge gender-badge-male" style="font-size:12px; font-weight:700;">0 und.</span>
         </div>
-        <p class="field-hint" style="margin-bottom:6px;">Haz clic en una talla para agregarla automáticamente o ingresa cantidad y talla abajo:</p>
         
-        <!-- Botones de selección rápida de tallas -->
-        <div class="quick-size-presets-bar" id="quick-size-presets"></div>
+        <!-- Barra de selección de talla: al seleccionar una talla se agrega en automático -->
+        <div class="size-dropdown-wrapper">
+          <select id="new-size-select" class="size-select-bar" title="Seleccionar talla">
+            <option value="">+ Seleccionar talla para agregar...</option>
+            <option value="4">Talla 4</option>
+            <option value="6">Talla 6</option>
+            <option value="8">Talla 8</option>
+            <option value="10">Talla 10</option>
+            <option value="12">Talla 12</option>
+            <option value="14">Talla 14</option>
+            <option value="16">Talla 16</option>
+            <option value="S">Talla S</option>
+            <option value="M">Talla M</option>
+            <option value="L">Talla L</option>
+            <option value="XL">Talla XL</option>
+            <option value="XXL">Talla XXL</option>
+            <option value="XXXL">Talla XXXL</option>
+            <option value="Estándar">Talla Estándar</option>
+            <option value="__custom__">Escribir otra talla...</option>
+          </select>
+          <input type="text" id="new-size-custom" placeholder="Escribe la talla (ej. 38) y presiona Enter..." class="hidden" style="margin-top:6px;">
+        </div>
 
         <!-- Lista de tallas añadidas -->
-        <div id="product-sizes-list" class="sizes-editor"></div>
-
-        <!-- Fila de agregar / autocompletar talla -->
-        <div class="add-size-row" style="margin-top:8px;">
-          <select id="new-size-select" title="Elegir talla">
-            <option value="">Elegir otra talla...</option>
-          </select>
-          <input type="text" id="new-size-custom" placeholder="Talla pers." class="hidden">
-          <div style="display:flex; align-items:center; gap:6px;">
-            <label for="new-size-qty" style="font-size:12px; color:var(--ink-soft); font-weight:600;">Cant:</label>
-            <input type="number" id="new-size-qty" min="1" value="1" placeholder="Cant." style="width:64px; text-align:center; font-family:var(--font-mono); font-weight:700;">
-          </div>
-          <button type="button" id="btn-add-size" class="btn-secondary" style="padding:6px 12px; font-size:12.5px;">+ Añadir</button>
-        </div>
+        <div id="product-sizes-list" class="sizes-editor" style="margin-top:8px;"></div>
       </div>
 
       <!-- SECCIÓN SIN TALLAS -->
@@ -257,7 +263,6 @@
           <span>unidades</span>
         </div>
       </div>
-
     </div>
     <div class="modal-foot">
       <button class="btn-danger-outline hidden" id="btn-delete-product">Eliminar prenda</button>
@@ -265,6 +270,47 @@
         <button class="btn-ghost" data-close-modal="modal-product">Cancelar</button>
         <button class="btn-primary" id="btn-save-product">Guardar prenda</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: VER TALLAS / DETALLE DE PRENDA ===================== -->
+<div id="modal-product-view" class="modal-overlay hidden">
+  <div class="modal modal-detail-side" role="dialog" aria-modal="true" aria-labelledby="modal-product-view-title">
+    <div class="modal-head">
+      <div>
+        <h2 id="modal-product-view-title">Detalle de Prenda</h2>
+        <span id="product-view-dance-tag" class="badge badge-accent hidden" style="margin-top:2px;"></span>
+      </div>
+      <button class="modal-close" data-close-modal="modal-product-view" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-body" id="product-view-body">
+      <div class="modal-split-detail">
+        <div class="modal-split-photo-col">
+          <div id="product-view-photo-wrap" class="modal-side-photo-wrap">
+            <img id="product-view-photo" src="" alt="" class="hidden">
+            <div id="product-view-placeholder" class="photo-placeholder">Sin foto</div>
+          </div>
+        </div>
+        <div class="modal-split-info-col">
+          <h3 id="product-view-name" class="modal-detail-title"></h3>
+          <div id="product-view-total-wrap" class="modal-total-strip">
+            <span class="modal-total-lbl">Total en inventario:</span>
+            <span id="product-view-total-qty" class="modal-total-num">0 und.</span>
+          </div>
+          <div id="product-view-sizes-section" class="modal-sizes-section">
+            <span class="modal-detail-section-lbl">Tallas disponibles:</span>
+            <div id="product-view-sizes-grid" class="clean-sizes-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot" style="justify-content:space-between;">
+      <button type="button" id="btn-product-view-edit" class="btn-primary" style="display:flex; align-items:center; gap:6px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        <span>Editar prenda</span>
+      </button>
+      <button type="button" class="btn-secondary" data-close-modal="modal-product-view">Cerrar</button>
     </div>
   </div>
 </div>
@@ -282,6 +328,11 @@
       <label class="field">
         <span class="field-label">Nombre de la danza</span>
         <input type="text" id="dance-name" placeholder="Ej. Danza Guerrera YAWAR INKA">
+      </label>
+
+      <label class="field">
+        <span class="field-label">Reseña o descripción breve (opcional)</span>
+        <textarea id="dance-description" rows="2" placeholder="Ej. Danza tradicional festiva que representa..."></textarea>
       </label>
 
       <div class="field">
@@ -312,33 +363,21 @@
       </div>
 
       <div class="field">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
           <span class="field-label">Prendas que componen este traje</span>
           <span id="dance-req-count-badge" class="gender-badge gender-badge-male" style="font-size:12px; font-weight:700;">0 prendas</span>
         </div>
 
-        <!-- Lista de prendas ya agregadas -->
-        <div id="dance-requirements-list" class="requirements-editor"></div>
-
-        <!-- Selector interactivo de prendas con buscador y carrusel deslizable -->
-        <div class="dance-garment-picker-box" style="margin-top:10px; background:#F8FAFC; border:1.5px solid var(--line); border-radius:10px; padding:12px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <span style="font-size:13px; font-weight:700; color:var(--ink);">Añadir prendas al traje:</span>
-            <span style="font-size:11.5px; color:var(--ink-faint);">Toca para agregar/quitar</span>
-          </div>
-
-          <!-- Buscador en tiempo real -->
-          <div class="dance-req-search-box">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" id="dance-req-search-input" placeholder="Buscar prenda por nombre (ej. Camisa, Poncho, Pollera...)" autocomplete="off">
-            <button type="button" id="btn-clear-dance-req-search" class="icon-btn remove-x hidden" title="Limpiar búsqueda">✕</button>
-          </div>
-
-          <!-- Slider / Lista deslizante de prendas disponibles -->
-          <div id="dance-available-garments-slider" class="dance-garments-slider"></div>
-
-          <p id="req-no-products" class="field-hint warn hidden" style="margin-top:6px;">Primero registra prendas en la pestaña «Productos» para poder agregarlas a la danza.</p>
+        <!-- Buscador simple de prendas -->
+        <div class="dance-req-search-box">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="dance-req-search-input" placeholder="Buscar prenda por nombre..." autocomplete="off">
+          <button type="button" id="btn-clear-dance-req-search" class="icon-btn remove-x hidden" title="Limpiar búsqueda">✕</button>
         </div>
+
+        <!-- Lista limpia de selección de prendas con casillas directas -->
+        <div id="dance-garments-checklist" class="dance-garments-checklist"></div>
+        <p id="req-no-products" class="field-hint warn hidden" style="margin-top:6px;">Primero registra prendas en la pestaña «Productos» para poder agregarlas a la danza.</p>
       </div>
     </div>
     <div class="modal-foot">
@@ -747,23 +786,30 @@
 
 <!-- ===================== MODAL: DETALLE DE DANZA PARA CLIENTES ===================== -->
 <div id="modal-dance-view" class="modal-overlay hidden">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-dance-view-title">
+  <div class="modal modal-detail-side" role="dialog" aria-modal="true" aria-labelledby="modal-dance-view-title">
     <div class="modal-head">
       <div>
         <h2 id="modal-dance-view-title">Detalle de Danza</h2>
-        <span class="badge badge-accent" style="margin-top:2px;">Traje Típico Completo</span>
+        <span class="badge badge-accent" style="margin-top:2px;">Vestimenta y Piezas</span>
       </div>
       <button class="modal-close" data-close-modal="modal-dance-view" aria-label="Cerrar">✕</button>
     </div>
     <div class="modal-body">
-      <div id="dance-view-photo-wrap" class="dance-detail-photo-wrap">
-        <img id="dance-view-photo" src="" alt="" class="hidden">
-        <div id="dance-view-placeholder" class="photo-placeholder">Sin foto de presentación</div>
-      </div>
-      <div class="dance-detail-info">
-        <h3 id="dance-view-name" style="font-size:18px; margin-bottom:8px;"></h3>
-        <span style="font-size:13px; font-weight:700; color:var(--ink); display:block; margin-bottom:6px;">Prendas que incluye la vestimenta:</span>
-        <ul id="dance-view-garments" class="dance-detail-garments-list"></ul>
+      <div class="modal-split-detail">
+        <div class="modal-split-photo-col">
+          <div id="dance-view-photo-wrap" class="modal-side-photo-wrap">
+            <img id="dance-view-photo" src="" alt="" class="hidden">
+            <div id="dance-view-placeholder" class="photo-placeholder">Sin foto de presentación</div>
+          </div>
+        </div>
+        <div class="modal-split-info-col">
+          <h3 id="dance-view-name" class="modal-detail-title"></h3>
+          <p id="dance-view-description" class="dance-detail-desc hidden"></p>
+          <div class="modal-garments-section">
+            <span class="modal-detail-section-lbl">Prendas que incluye este traje:</span>
+            <ul id="dance-view-garments" class="dance-detail-garments-list"></ul>
+          </div>
+        </div>
       </div>
     </div>
     <div class="modal-foot" style="justify-content:space-between;">
