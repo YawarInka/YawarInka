@@ -600,30 +600,56 @@ main {
   color: #0F172A;
 }
 
-.card-actions {
-  margin-top: 4px;
+.card-actions,
+.product-card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+  margin-top: 8px;
+  align-items: center;
 }
 
-.card-actions button {
+.card-actions button,
+.product-card-actions button {
   width: 100%;
-  padding: 8px 14px;
-  border-radius: 6px;
+  min-height: 38px;
+  padding: 8px 10px;
+  border-radius: 8px;
   border: 1px solid #CBD5E1;
   background: #FFFFFF;
   cursor: pointer;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 12.5px;
   color: #1E293B;
   transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   text-align: center;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  box-sizing: border-box;
 }
 
-.card-actions button:hover {
+.card-actions button:hover,
+.product-card-actions button:hover {
   background: #F8FAFC;
   border-color: #94A3B8;
   color: #0F172A;
   box-shadow: 0 2px 4px rgba(15, 23, 42, 0.06);
+}
+
+.product-card-actions .btn-view-eye {
+  background: #F8FAFC;
+  border-color: #E2E8F0;
+  color: #334155;
+}
+
+.product-card-actions .btn-view-eye:hover {
+  background: #EFF6FF;
+  border-color: #93C5FD;
+  color: #1D4ED8;
 }
 
 /* ---- Danza cards ---- */
@@ -1862,39 +1888,298 @@ input[type="number"] {
   padding: 5px 10px;
 }
 
+/* Product sizes & split detail layout in View Modals */
+.modal-detail-side {
+  max-width: 560px;
+  width: 95%;
+}
+
+.modal-split-detail {
+  display: grid;
+  grid-template-columns: 170px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 520px) {
+  .modal-split-detail {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
+.modal-split-photo-col {
+  width: 100%;
+}
+
+.modal-side-photo-wrap {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  max-height: 230px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.modal-side-photo-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.modal-split-info-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.modal-detail-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0 0 6px 0;
+  line-height: 1.3;
+}
+
+.modal-total-strip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #475569;
+  margin-bottom: 12px;
+}
+
+.modal-total-lbl {
+  font-weight: 500;
+}
+
+.modal-total-num {
+  font-weight: 800;
+  color: #0F172A;
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+}
+
+.modal-detail-section-lbl {
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  display: block;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.size-bars-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.size-bar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #F8FAFC;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.size-bar-row:hover {
+  background: #F1F5F9;
+  border-color: #94A3B8;
+}
+
+.size-bar-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1E293B;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.size-bar-qty {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.size-bar-qty strong {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 800;
+  color: #0F172A;
+}
+
+.clean-sizes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.clean-size-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 6px 2px;
+  border-bottom: 1px dashed #E2E8F0;
+  font-size: 13.5px;
+  color: #1E293B;
+}
+
+.clean-size-title {
+  font-weight: 600;
+  color: #0F172A;
+  white-space: nowrap;
+}
+
+.clean-size-dots {
+  flex: 1;
+  border-bottom: 1px dotted #CBD5E1;
+  margin: 0 8px;
+  height: 1px;
+  align-self: center;
+}
+
+.clean-size-val {
+  font-weight: 700;
+  color: #0F172A;
+  white-space: nowrap;
+}
+
+.sizes-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
 .size-edit-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  background: var(--bg);
-  border: 1.5px solid var(--line);
-  border-radius: var(--radius-sm);
+  justify-content: space-between;
+  gap: 8px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
   padding: 6px 10px;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
 }
 
-.size-edit-row .size-label-edit {
+.size-edit-row:hover {
+  background: #F1F5F9;
+  border-color: #CBD5E1;
+}
+
+.size-edit-label {
+  font-size: 13.5px;
   font-weight: 700;
-  color: var(--ink);
-  min-width: 60px;
-  font-size: 13px;
+  color: #0F172A;
+  min-width: 75px;
 }
 
-.size-edit-row .stepper {
+.size-edit-stepper {
   display: flex;
   align-items: center;
-  gap: 5px;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  border-radius: 6px;
+  overflow: hidden;
   margin-left: auto;
 }
 
-.size-edit-row .stepper input {
-  width: 50px;
+.stepper-sub-btn,
+.stepper-add-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  font-size: 15px;
+  font-weight: 700;
+  color: #475569;
+  cursor: pointer;
+  transition: background 0.1s ease;
+  padding: 0;
+}
+
+.stepper-sub-btn:hover,
+.stepper-add-btn:hover {
+  background: #E2E8F0;
+  color: #0F172A;
+}
+
+.size-edit-stepper input {
+  width: 44px;
+  height: 28px;
+  border: none;
+  border-left: 1px solid #E2E8F0;
+  border-right: 1px solid #E2E8F0;
   text-align: center;
-  border: 1.5px solid var(--line);
-  border-radius: 6px;
-  padding: 4px;
   font-family: var(--font-mono);
-  font-weight: 600;
-  font-size: 14px;
+  font-weight: 800;
+  font-size: 13.5px;
+  color: #0F172A;
+  outline: none;
+  padding: 0;
+}
+
+.size-edit-unit-lbl {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #64748B;
+}
+
+.size-edit-remove-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: #94A3B8;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  transition: all 0.15s ease;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.size-edit-remove-btn:hover {
+  background: #FEE2E2;
+  color: #DC2626;
+  border-color: #FECACA;
 }
 
 .req-edit-row .req-edit-text {
@@ -2308,26 +2593,19 @@ input[type="number"] {
 }
 
 /* Modal Detalle Danza */
-.dance-detail-photo-wrap {
-  width: 100%;
-  max-width: 320px;
-  aspect-ratio: 3 / 4;
-  max-height: 420px;
-  border-radius: 12px;
-  overflow: hidden;
-  background: #F1F5F9;
-  border: 1px solid var(--line);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 16px auto;
+.modal-garments-section {
+  margin-top: 4px;
 }
 
-.dance-detail-photo-wrap img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center top;
+.dance-detail-desc {
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.45;
+  margin: 0 0 10px 0;
+  background: #F8FAFC;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #E2E8F0;
 }
 
 .dance-detail-garments-list {
@@ -2337,19 +2615,36 @@ input[type="number"] {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  max-height: 230px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
-.dance-detail-garments-list li {
+.dance-garment-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
+  gap: 10px;
+  padding: 8px 12px;
   background: #F8FAFC;
   border: 1px solid #E2E8F0;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 13.5px;
+  box-sizing: border-box;
+}
+
+.dance-garment-num {
+  color: var(--accent);
+  font-weight: 800;
+  font-size: 13px;
+  font-family: var(--font-mono);
+  min-width: 18px;
+  flex-shrink: 0;
+}
+
+.dance-garment-name {
   font-weight: 600;
-  color: #1E293B;
+  color: #0F172A;
+  flex: 1;
 }
 
 /* Footer link admin */
@@ -2919,61 +3214,50 @@ input[type="number"] {
     font-size: 12px;
   }
 
-  /* Botones de acción en tarjetas móviles: Solo iconos limpios y ordenados */
-  .catalog-card-actions .btn-label,
-  .dance-card-actions .btn-label,
-  .card-actions .btn-label {
-    display: none;
-  }
-
   .catalog-card-actions,
-  .dance-card-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-    width: 100%;
-    margin-top: 2px;
+  .dance-card-actions,
+  .card-actions,
+  .product-card-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 6px !important;
+    width: 100% !important;
+    margin-top: 6px !important;
   }
 
   .btn-catalog-view-detail,
   .btn-catalog-consult,
-  .dance-card-actions button {
-    padding: 8px 4px;
-    min-height: 38px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
+  .dance-card-actions button,
+  .card-actions button,
+  .product-card-actions button {
+    padding: 6px 6px !important;
+    min-height: 38px !important;
+    border-radius: 8px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* En pantallas pequeñas no va texto en los botones de tarjeta, solo icono limpio */
+  .btn-catalog-view-detail .btn-label,
+  .btn-catalog-consult .btn-label,
+  .dance-card-actions button .btn-label,
+  .card-actions button .btn-label,
+  .product-card-actions button .btn-label {
+    display: none !important;
   }
 
   .btn-catalog-view-detail svg,
   .btn-catalog-consult svg,
-  .dance-card-actions button svg {
-    width: 18px;
-    height: 18px;
-  }
-
-  .card-actions {
-    display: flex;
-    gap: 6px;
-    width: 100%;
-    margin-top: 2px;
-  }
-
-  .card-actions button {
-    padding: 8px 4px;
-    min-height: 38px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-  }
-
-  .card-actions button svg {
-    width: 18px;
-    height: 18px;
+  .dance-card-actions button svg,
+  .card-actions button svg,
+  .product-card-actions button svg {
+    width: 17px !important;
+    height: 17px !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
   }
 
   .dance-garments-list {
